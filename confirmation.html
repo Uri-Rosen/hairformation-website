@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>אישור תור - HairFormation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- קישור לגופן Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/4.5.2-1/bootstrap-rtl.min.css">
+    <!-- CSS מותאם אישית -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="d-flex flex-column min-vh-100">
+        <!-- תפריט ניווט -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="index.html">
+                <img src="images/logo.png" alt="לוגו המספרה" height="60">
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse"
+                    data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                    aria-label="החלף ניווט">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end"
+                 id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">בית</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="booking.html">קביעת תור</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact.html">צרו קשר</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="content-container container text-center">
+            <h1>התור נקבע בהצלחה!</h1>
+            <p>תודה שפנית אלינו. התור שלך נקבע בהצלחה.</p>
+            <!-- הצגת פרטי התור -->
+            <div id="appointmentDetails">
+                <!-- הפרטים יתווספו כאן -->
+            </div>
+            <p>נשמח לראותך ב-HairFormation.</p>
+            <!-- הודעת הספירה לאחור -->
+            <p id="redirectMessage">תועבר לעמוד הבית בעוד <span id="countdown">5</span> שניות.</p>
+            <a href="index.html" class="btn btn-primary mt-4">חזרה לדף הבית</a>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer text-center">
+            <p>&copy; 2024 HairFormation. כל הזכויות שמורות.</p>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS ו-jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- כלול אם השתמשת ב-Bootstrap CSS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- סקריפט להצגת פרטי התור והפנייה אוטומטית -->
+    <script>
+        // קבלת פרטי התור מ-localStorage
+        const appointmentDetails = JSON.parse(localStorage.getItem('appointmentDetails'));
+
+        if (appointmentDetails) {
+            const detailsDiv = document.getElementById('appointmentDetails');
+            const dateDisplay = appointmentDetails.date.split('-').reverse().join('/');
+            detailsDiv.innerHTML = `
+                <p><strong>שם:</strong> ${appointmentDetails.firstName} ${appointmentDetails.lastName}</p>
+                <p><strong>תאריך:</strong> ${dateDisplay}</p>
+                <p><strong>שעה:</strong> ${appointmentDetails.time}</p>
+                <p><strong>סוג שירות:</strong> ${appointmentDetails.haircutType}</p>
+            `;
+            // מחיקת הנתונים מ-localStorage
+            localStorage.removeItem('appointmentDetails');
+        } else {
+            // אם אין פרטים, ייתכן שהמשתמש ניגש ישירות לעמוד
+            document.getElementById('appointmentDetails').innerHTML = '<p>לא נמצאו פרטי תור.</p>';
+        }
+
+        // הפנייה אוטומטית לעמוד הבית עם ספירה לאחור
+        let countdown = 5; // מספר השניות לפני ההפנייה
+        const countdownElement = document.getElementById('countdown');
+
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            countdownElement.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                window.location.href = 'index.html';
+            }
+        }, 1000); // עדכון כל שנייה (1000 מילישניות)
+    </script>
+</body>
+</html>

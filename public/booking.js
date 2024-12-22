@@ -3,8 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ----------------------------------------------------
   // 1) Configure the base URL of your Node server
   // ----------------------------------------------------
-  const SERVER_BASE_URL = 'http://localhost:5000';
-
+  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com';
   // ----------------------------------------------------
   // 2) Get references to form elements
   // ----------------------------------------------------

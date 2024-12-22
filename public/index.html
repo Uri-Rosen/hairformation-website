@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>HairFormation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- קישור לגופן Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/4.5.2-1/bootstrap-rtl.min.css">
+    <!-- CSS מותאם אישית -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="d-flex flex-column min-vh-100">
+        <!-- תפריט ניווט -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="index.html">
+                <img src="images/logo.png" alt="לוגו המספרה" height="60">
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse"
+                    data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                    aria-label="החלף ניווט">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end"
+                 id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">בית</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="booking.html">קביעת תור</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact.html">צרו קשר</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- אזור הבאנר -->
+        <header class="banner">
+            <div class="overlay">
+                <h1>HairFormation</h1>
+                <p>התספורות הטובות ביותר</p>
+                <a href="booking.html" class="btn btn-primary btn-lg">קבעו תור עכשיו</a>
+            </div>
+        </header>
+
+        <!-- גלריית תמונות עם Carousel -->
+        <section class="gallery container">
+            <h2 class="text-center"></h2>
+            <!-- Wrapper to set direction to LTR -->
+            <div class="carousel-wrapper">
+                <div id="hairCarousel" class="carousel slide" data-ride="carousel">
+                    <!-- Indicators -->
+                    <ol class="carousel-indicators">
+                        <li data-target="#hairCarousel" data-slide-to="0" class="active"></li>
+                        <li data-target="#hairCarousel" data-slide-to="1"></li>
+                        <li data-target="#hairCarousel" data-slide-to="2"></li>
+                        <li data-target="#hairCarousel" data-slide-to="3"></li>
+                        <li data-target="#hairCarousel" data-slide-to="4"></li>
+                        <li data-target="#hairCarousel" data-slide-to="5"></li>
+                    </ol>
+
+                    <!-- Carousel items -->
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="images/example1.jpg" class="d-block w-100" alt="תספורת 1">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="images/example2.jpg" class="d-block w-100" alt="תספורת 2">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="images/example3.jpg" class="d-block w-100" alt="תספורת 3">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="images/example4.jpg" class="d-block w-100" alt="תספורת 4">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="images/example5.jpg" class="d-block w-100" alt="תספורת 5">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="images/example6.jpg" class="d-block w-100" alt="תספורת 6">
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <a class="carousel-control-prev" href="#hairCarousel" role="button" data-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">הקודם</span>
+                    </a>
+                    <a class="carousel-control-next" href="#hairCarousel" role="button" data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">הבא</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- אזור יצירת קשר (כפתור לוואטסאפ) -->
+        <section id="contact" class="contact-section">
+            <div class="container text-center">
+                <h2>צרו קשר</h2>
+                <p>לפרטים נוספים, שלחו לנו הודעה בוואטסאפ.</p>
+                <a href="#" id="whatsappLink" class="btn btn-success"><i class="fab fa-whatsapp"></i> שלחו הודעה בוואטסאפ</a>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer text-center">
+            <p>&copy; 2024 HairFormation. כל הזכויות שמורות.</p>
+        </footer>
+    </div>
+
+    <!-- Font Awesome Icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <!-- jQuery ו-Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- JavaScript מותאם אישית -->
+    <script src="script.js"></script>
+</body>
+</html>

@@ -104,103 +104,106 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // ----------------------------------------------------
-  // 5) Handle Form Submission => Book Appointment OR WhatsApp
-  // ----------------------------------------------------
-  bookingForm.addEventListener('submit', async function(event) {
-    event.preventDefault();
+// ----------------------------------------------------
+// 5) Handle Form Submission => Book Appointment OR WhatsApp
+// ----------------------------------------------------
+bookingForm.addEventListener('submit', async function(event) {
+  event.preventDefault();
 
-    // Perform comprehensive validation before submission
-    const isValid = validateForm();
-    if (!isValid) {
-      // Scroll to the first error
-      const firstError = document.querySelector('.is-invalid');
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+  // 1) Validate the form fields
+  const isValid = validateForm();
+  if (!isValid) {
+    const firstError = document.querySelector('.is-invalid');
+    if (firstError) {
+      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+
+  // 2) Gather form data
+  const serviceType = haircutTypeSelect.value;
+  const date = dateInput.value;
+  const time = timeSelect.value;
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+
+  const serviceTypeHebrew = {
+    Gvanim: 'גוונים',
+    Keratin: 'טיפול קרטין',
+    Ampule: 'אמפולה'
+    // Add other mappings if necessary
+  };
+
+  // 3) If it's one of the 3 special services:
+  // => open WhatsApp and SKIP normal booking
+  if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
+    const serviceHebrew = serviceTypeHebrew[serviceType] || serviceType;
+    const baseWhatsappUrl = 'https://api.whatsapp.com/send';
+    const phoneNumber = '972547224551'; 
+    const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceHebrew}.`;
+
+    const whatsappLink = `${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`;
+    window.open(whatsappLink, '_blank');
+    return; // Stop here
+  }
+
+  // -----------------------------------------------------------
+  // 4) For normal services, do a *final check* on availability
+  // -----------------------------------------------------------
+  try {
+    // a) Ask the server for the current availability again
+    const finalCheckResponse = await fetch(`${SERVER_BASE_URL}/get-availability`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, serviceType })
+    });
+    const finalCheckData = await finalCheckResponse.json();
+
+    const availableSlots = finalCheckData.availableSlots || [];
+
+    // b) If the chosen `time` is NOT in the newly-fetched available slots,
+    //    someone else must have taken it => show alert in Hebrew and stop
+    if (!availableSlots.includes(time)) {
+      alert("אופס! נראה שמישהו אחר כבר קבע את השעה הזו. אנא בחרו שעה אחרת.");
       return;
     }
+  } catch (err) {
+    console.error("Final availability check failed:", err);
+    // If for some reason we can't check availability,
+    // show an error alert in Hebrew
+    alert("שגיאה בבדיקה הסופית. אנא נסו שוב מאוחר יותר.");
+    return;
+  }
 
-    // Gather all form fields
-    const serviceType = haircutTypeSelect.value;
-    const date = dateInput.value;
-    const time = timeSelect.value;
-    const firstName = document.getElementById('firstName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const serviceTypeHebrew = {
-      Gvanim: 'גוונים',
-      Keratin: 'טיפול קרטין',
-      Ampule: 'אמפולה'
-      // Add other mappings if necessary
-    };
+  // 5) If still available, proceed with the normal booking
+  try {
+    const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ serviceType, date, time, firstName, lastName, phone })
+    });
 
-    // ----------------------------
-    // If it's one of the 3 special services:
-    // => open WhatsApp and SKIP normal booking
-    // ----------------------------
-    // Inside the submit handler
-    if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
-      // Get the Hebrew service name
-      const serviceHebrew = serviceTypeHebrew[serviceType] || serviceType;
-    
-      // Build the WhatsApp message
-      const baseWhatsappUrl = 'https://api.whatsapp.com/send';
-      const phoneNumber = '972547224551'; // No plus sign or dashes
-      const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceHebrew}.`;
-    
-      // Construct the final link
-      const whatsappLink = `${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`;
-    
-      // Open in a new tab
-      window.open(whatsappLink, '_blank');
-    
-      // Stop here so we don't call the normal booking route
-      return;
+    const data = await response.json();
+    if (data.error) {
+      showValidationError(timeSelect, `לא ניתן לקבוע את התור: ${data.error}`);
+    } else {
+      // Success => store details, go to confirmation page
+      const appointmentDetails = {
+        firstName,
+        lastName,
+        date,
+        time,
+        haircutType: serviceType
+      };
+      localStorage.setItem('appointmentDetails', JSON.stringify(appointmentDetails));
+      window.location.href = 'confirmation.html';
     }
-
-
-    // ----------------------------
-    // Otherwise, do normal booking to the calendar
-    // ----------------------------
-    try {
-      const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serviceType,
-          date,
-          time,
-          firstName,
-          lastName,
-          phone
-        })
-      });
-
-      const data = await response.json();
-      if (data.error) {
-        // Server says the slot is unavailable or outside working hours, etc.
-        showValidationError(timeSelect, `לא ניתן לקבוע את התור: ${data.error}`);
-      } else {
-        // Success => redirect to confirmation page
-        // Store details in localStorage so we can show them on confirmation.html
-        const appointmentDetails = {
-          firstName,
-          lastName,
-          date,
-          time,
-          haircutType: serviceType
-        };
-        localStorage.setItem('appointmentDetails', JSON.stringify(appointmentDetails));
-
-        // Now go to the confirmation page
-        window.location.href = 'confirmation.html';
-      }
-    } catch (err) {
-      console.error('Booking failed', err);
-      showValidationError(null, 'התרחשה שגיאה בקביעת התור. אנא נסו שוב מאוחר יותר.');
-    }
-  });
+  } catch (err) {
+    console.error('Booking failed', err);
+    showValidationError(null, 'התרחשה שגיאה בקביעת התור. אנא נסו שוב מאוחר יותר.');
+  }
+});
 
   // ----------------------------------------------------
   // 6) Helper Functions for Validation and Error Handling

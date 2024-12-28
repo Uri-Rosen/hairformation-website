@@ -133,23 +133,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // If it's one of the 3 special services:
     // => open WhatsApp and SKIP normal booking
     // ----------------------------
+    // Inside the submit handler
     if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
+      // Get the Hebrew service name
+      const serviceHebrew = serviceTypeHebrew[serviceType] || serviceType;
+    
       // Build the WhatsApp message
       const baseWhatsappUrl = 'https://api.whatsapp.com/send';
       const phoneNumber = '972547224551'; // No plus sign or dashes
-      const textMessage = `היי, אשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceType}. 
-תודה, 
-${firstName} ${lastName}`;
-
+      const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceHebrew}.`;
+    
       // Construct the final link
       const whatsappLink = `${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`;
-
-      // Open in a new tab (or same tab if you prefer)
+    
+      // Open in a new tab
       window.open(whatsappLink, '_blank');
-
+    
       // Stop here so we don't call the normal booking route
       return;
     }
+
 
     // ----------------------------
     // Otherwise, do normal booking to the calendar

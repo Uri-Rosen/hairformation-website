@@ -128,6 +128,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
     const phone = document.getElementById('phone').value.trim();
+    const serviceTypeHebrew = {
+      Gvanim: 'גוונים',
+      Keratin: 'טיפול קרטין',
+      Ampule: 'אמפולה'
+      // Add other mappings if necessary
+    };
 
     // ----------------------------
     // If it's one of the 3 special services:

@@ -62,15 +62,20 @@
                         <label for="haircutType" class="text-right">סוג שירות:</label>
                         <select class="form-control" id="haircutType" name="haircutType" required>
                             <option value="">בחרו סוג שירות</option>
-                            <!-- Match serviceType values with the Node server SERVICE_DURATIONS keys -->
+                            <!-- Existing services -->
                             <option value="ManWithoutBeard">תספורת גברים ללא זקן</option>
                             <option value="ManWithBeard">תספורת גברים עם זקן</option>
                             <option value="Woman">תספורת נשים</option>
                             <option value="HairColoring">צבע שורש</option>
                             <option value="InoaRootColoring">צבע שורש אינואה</option>
                             <option value="BlowDry">פן</option>
-                            <!-- Add others if needed -->
+                        
+                            <!-- New special services -->
+                            <option value="Gvanim">גוונים</option>
+                            <option value="Keratin">טיפול קרטין</option>
+                            <option value="Ampule">אמפולה</option>
                         </select>
+
                         <div class="invalid-feedback">
                             אנא בחרו סוג שירות.
                         </div>

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const dateInput = document.getElementById('date');
   const timeSelect = document.getElementById('time');
   const bookingForm = document.getElementById('bookingForm');
+  const submitBtn = document.getElementById('submitBtn'); // the final button
 
   // ----------------------------------------------------
   // 3) Initialize the datepicker (Bootstrap Datepicker)
@@ -36,11 +37,23 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAvailableTimes(formattedDate);
   });
 
-  // Reset date/time when user changes service type
+  // When user changes the service type, reset date/time,
+  // AND toggle the button color/link if it’s one of the 3 special services.
   haircutTypeSelect.addEventListener('change', function() {
-    dateInput.value = ''; // clear date
-    timeSelect.innerHTML = '<option value="">בחרו שעה</option>'; // clear time list
+    dateInput.value = ''; 
+    timeSelect.innerHTML = '<option value="">בחרו שעה</option>';
     removeValidationError(haircutTypeSelect);
+
+    // Check if the selected value is one of the special services
+    if (["Gvanim", "Keratin", "Ampule"].includes(haircutTypeSelect.value)) {
+      // Make the button green
+      submitBtn.classList.remove('btn-primary');
+      submitBtn.classList.add('btn-success');
+    } else {
+      // Revert to normal (blue)
+      submitBtn.classList.remove('btn-success');
+      submitBtn.classList.add('btn-primary');
+    }
   });
 
   // ----------------------------------------------------
@@ -92,14 +105,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ----------------------------------------------------
-  // 5) Handle Form Submission => Book Appointment
+  // 5) Handle Form Submission => Book Appointment OR WhatsApp
   // ----------------------------------------------------
   bookingForm.addEventListener('submit', async function(event) {
     event.preventDefault();
 
     // Perform comprehensive validation before submission
     const isValid = validateForm();
-
     if (!isValid) {
       // Scroll to the first error
       const firstError = document.querySelector('.is-invalid');
@@ -117,7 +129,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastName = document.getElementById('lastName').value.trim();
     const phone = document.getElementById('phone').value.trim();
 
-    // Send a POST request to book-appointment
+    // ----------------------------
+    // If it's one of the 3 special services:
+    // => open WhatsApp and SKIP normal booking
+    // ----------------------------
+    if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
+      // Build the WhatsApp message
+      const baseWhatsappUrl = 'https://api.whatsapp.com/send';
+      const phoneNumber = '972547224551'; // No plus sign or dashes
+      const textMessage = `היי, אשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceType}. 
+תודה, 
+${firstName} ${lastName}`;
+
+      // Construct the final link
+      const whatsappLink = `${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`;
+
+      // Open in a new tab (or same tab if you prefer)
+      window.open(whatsappLink, '_blank');
+
+      // Stop here so we don't call the normal booking route
+      return;
+    }
+
+    // ----------------------------
+    // Otherwise, do normal booking to the calendar
+    // ----------------------------
     try {
       const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
         method: 'POST',
@@ -131,8 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
           phone
         })
       });
-      const data = await response.json();
 
+      const data = await response.json();
       if (data.error) {
         // Server says the slot is unavailable or outside working hours, etc.
         showValidationError(timeSelect, `לא ניתן לקבוע את התור: ${data.error}`);
@@ -165,10 +201,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const phonePattern = /^\d{10}$/; // Ensures exactly 10 digits
   const namePattern = /^[A-Za-zא-ת]+$/;
 
-  /**
-   * Validates the entire form before submission.
-   * @returns {boolean} True if the form is valid, false otherwise.
-   */
   function validateForm() {
     let valid = true;
 
@@ -238,26 +270,18 @@ document.addEventListener('DOMContentLoaded', function() {
     return valid;
   }
 
-  /**
-   * Displays a validation error message for a specific input.
-   * @param {HTMLElement} inputElement - The input element to display the error for.
-   * @param {string} message - The error message to display.
-   */
   function showValidationError(inputElement, message) {
     if (inputElement) {
       inputElement.classList.add('is-invalid');
-
       let feedback = inputElement.parentElement.querySelector('.invalid-feedback');
       if (!feedback) {
-        // Create invalid-feedback element if it doesn't exist
         feedback = document.createElement('div');
         feedback.className = 'invalid-feedback';
         inputElement.parentElement.appendChild(feedback);
       }
       feedback.textContent = message;
     } else {
-      // General form error (e.g., booking submission error)
-      // You can choose where to display this error. For example, at the top of the form.
+      // General form error
       let formError = bookingForm.querySelector('.form-error');
       if (!formError) {
         formError = document.createElement('div');
@@ -268,14 +292,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  /**
-   * Removes the validation error message for a specific input.
-   * @param {HTMLElement} inputElement - The input element to remove the error from.
-   */
   function removeValidationError(inputElement) {
     if (inputElement) {
       inputElement.classList.remove('is-invalid');
-
       const feedback = inputElement.parentElement.querySelector('.invalid-feedback');
       if (feedback) {
         feedback.textContent = '';
@@ -283,11 +302,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  /**
-   * Validates inputs within a specific step.
-   * @param {HTMLElement} currentStep - The current step container.
-   * @returns {boolean} True if the step is valid, false otherwise.
-   */
   function validateStep(currentStep) {
     let valid = true;
     const inputs = currentStep.querySelectorAll('.form-control');
@@ -297,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
         showValidationError(input, getErrorMessage(input));
         valid = false;
       } else {
-        // Additional validations for specific fields
         if (input.id === 'phone') {
           if (!phonePattern.test(input.value.trim())) {
             showValidationError(input, 'מספר הטלפון חייב להכיל בדיוק 10 ספרות.');
@@ -313,7 +326,6 @@ document.addEventListener('DOMContentLoaded', function() {
             removeValidationError(input);
           }
         } else {
-          // For other inputs, just remove any existing error
           removeValidationError(input);
         }
       }
@@ -322,11 +334,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return valid;
   }
 
-  /**
-   * Returns an appropriate error message based on the input element.
-   * @param {HTMLElement} input - The input element.
-   * @returns {string} The error message.
-   */
   function getErrorMessage(input) {
     switch(input.id) {
       case 'haircutType':
@@ -359,7 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Validate current step's inputs
         const stepIsValid = validateStep(currentStep);
         if (stepIsValid) {
-          // Move to next step
           currentStep.classList.remove('active');
           if (nextStep) {
             nextStep.classList.add('active');
@@ -368,6 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     }
+
     const prevBtn = document.getElementById(`prevBtn-${i}`);
     if (prevBtn) {
       prevBtn.addEventListener('click', function() {
@@ -382,10 +389,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  /**
-   * Updates the progress bar based on the current step.
-   * @param {number} step - The current step number.
-   */
   function updateProgressBar(step) {
     const progressBar = document.querySelector('.progress-bar');
     const percentage = (step / totalSteps) * 100;

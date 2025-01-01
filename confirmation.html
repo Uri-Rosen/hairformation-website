@@ -68,17 +68,40 @@
 
     <!-- סקריפט להצגת פרטי התור והפנייה אוטומטית -->
     <script>
+        // מיפוי סוגי שירות לקוד שלהם בעברית
+        const SERVICE_DESCRIPTIONS_HEB = {
+            ManWithoutBeard: 'תספורת גברים ללא זקן',
+            ManWithBeard: 'תספורת גברים עם זקן',
+            Woman: 'תספורת נשים',
+            HairColoring: 'צבע שורש',
+            InoaRootColoring: 'צבע שורש אינואה',
+            BlowDry: 'פן',
+            ColorAndBlowDry: 'צבע שורש + פן',
+            ColorAndWoman: 'צבע שורש + תספורת נשים',
+            ColorAndWomanAndBlowDry: 'צבע שורש + תספורת נשים + פן',
+            InoaRootColoringAndBlowDry: 'צבע שורש אינואה + פן',
+            InoaRootColoringAndWoman: 'צבע שורש אינואה + תספורת נשים',
+            InoaRootColoringAndWomanAndBlowDry: 'צבע שורש אינואה + תספורת נשים + פן',
+            Gvanim: 'גוונים',
+            Keratin: 'טיפול קרטין',
+            Ampule: 'אמפולה'
+        };
+
         // קבלת פרטי התור מ-localStorage
         const appointmentDetails = JSON.parse(localStorage.getItem('appointmentDetails'));
 
         if (appointmentDetails) {
             const detailsDiv = document.getElementById('appointmentDetails');
             const dateDisplay = appointmentDetails.date.split('-').reverse().join('/');
+
+            // קבלת התיאור בעברית של סוג השירות
+            const serviceHebrew = SERVICE_DESCRIPTIONS_HEB[appointmentDetails.haircutType] || appointmentDetails.haircutType;
+
             detailsDiv.innerHTML = `
                 <p><strong>שם:</strong> ${appointmentDetails.firstName} ${appointmentDetails.lastName}</p>
                 <p><strong>תאריך:</strong> ${dateDisplay}</p>
                 <p><strong>שעה:</strong> ${appointmentDetails.time}</p>
-                <p><strong>סוג שירות:</strong> ${appointmentDetails.haircutType}</p>
+                <p><strong>סוג שירות:</strong> ${serviceHebrew}</p>
             `;
             // מחיקת הנתונים מ-localStorage
             localStorage.removeItem('appointmentDetails');

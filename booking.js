@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ----------------------------------------------------
   // 1) Configure the base URL of your Node server
   // ----------------------------------------------------
-  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com';
+  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com'; // Update if different
 
   // ----------------------------------------------------
   // 2) Get references to form elements
@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedDate = e.date; // a Date object
     const formattedDate = formatDate(selectedDate); // "YYYY-MM-DD"
     dateInput.value = formattedDate;
+    console.log(`Date selected: ${formattedDate}`);
 
     // After picking a date, load the available times from the server
     loadAvailableTimes(formattedDate);
@@ -43,16 +44,19 @@ document.addEventListener('DOMContentLoaded', function() {
     dateInput.value = ''; 
     timeSelect.innerHTML = '<option value="">בחרו שעה</option>';
     removeValidationError(haircutTypeSelect);
+    console.log(`Service type changed to: ${haircutTypeSelect.value}`);
 
     // Check if the selected value is one of the special services
     if (["Gvanim", "Keratin", "Ampule"].includes(haircutTypeSelect.value)) {
       // Make the button green
       submitBtn.classList.remove('btn-primary');
       submitBtn.classList.add('btn-success');
+      console.log('Special service selected. Submit button turned green.');
     } else {
       // Revert to normal (blue)
       submitBtn.classList.remove('btn-success');
       submitBtn.classList.add('btn-primary');
+      console.log('Regular service selected. Submit button reverted to blue.');
     }
   });
 
@@ -64,10 +68,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const serviceType = haircutTypeSelect.value;
     if (!serviceType) {
       timeSelect.innerHTML = '<option value="">בחרו סוג שירות קודם</option>';
+      console.log('No service type selected. Awaiting user selection.');
       return;
     }
 
     timeSelect.innerHTML = '<option value="">טוען...</option>';
+    console.log(`Loading available times for date: ${dateStr}, serviceType: ${serviceType}`);
 
     try {
       const response = await fetch(`${SERVER_BASE_URL}/get-availability`, {
@@ -81,12 +87,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // If the server returned an error
         showValidationError(timeSelect, data.error);
         timeSelect.innerHTML = '<option value="">אין שעות פנויות</option>';
+        console.log(`Error fetching availability: ${data.error}`);
         return;
       }
 
       const slots = data.availableSlots || [];
       if (slots.length === 0) {
         timeSelect.innerHTML = '<option value="">אין שעות פנויות</option>';
+        console.log('No available slots found.');
       } else {
         timeSelect.innerHTML = '<option value="">בחרו שעה</option>';
         slots.forEach(time => {
@@ -95,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
           option.textContent = time;
           timeSelect.appendChild(option);
         });
+        console.log(`Available slots loaded: ${slots.join(', ')}`);
       }
       removeValidationError(timeSelect);
     } catch (err) {
@@ -104,106 +113,130 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-// ----------------------------------------------------
-// 5) Handle Form Submission => Book Appointment OR WhatsApp
-// ----------------------------------------------------
-bookingForm.addEventListener('submit', async function(event) {
-  event.preventDefault();
+  // ----------------------------------------------------
+  // 5) Handle Form Submission => Book Appointment OR WhatsApp
+  // ----------------------------------------------------
+  bookingForm.addEventListener('submit', async function(event) {
+    event.preventDefault();
+    console.log('Booking form submitted.');
 
-  // 1) Validate the form fields
-  const isValid = validateForm();
-  if (!isValid) {
-    const firstError = document.querySelector('.is-invalid');
-    if (firstError) {
-      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    return;
-  }
-
-  // 2) Gather form data
-  const serviceType = haircutTypeSelect.value;
-  const date = dateInput.value;
-  const time = timeSelect.value;
-  const firstName = document.getElementById('firstName').value.trim();
-  const lastName = document.getElementById('lastName').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-
-  const serviceTypeHebrew = {
-    Gvanim: 'גוונים',
-    Keratin: 'טיפול קרטין',
-    Ampule: 'אמפולה'
-    // Add other mappings if necessary
-  };
-
-  // 3) If it's one of the 3 special services:
-  // => open WhatsApp and SKIP normal booking
-  if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
-    const serviceHebrew = serviceTypeHebrew[serviceType] || serviceType;
-    const baseWhatsappUrl = 'https://api.whatsapp.com/send';
-    const phoneNumber = '972547224551'; 
-    const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceHebrew}.`;
-
-    const whatsappLink = `${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`;
-    window.open(whatsappLink, '_blank');
-    return; // Stop here
-  }
-
-  // -----------------------------------------------------------
-  // 4) For normal services, do a *final check* on availability
-  // -----------------------------------------------------------
-  try {
-    // a) Ask the server for the current availability again
-    const finalCheckResponse = await fetch(`${SERVER_BASE_URL}/get-availability`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, serviceType })
-    });
-    const finalCheckData = await finalCheckResponse.json();
-
-    const availableSlots = finalCheckData.availableSlots || [];
-
-    // b) If the chosen `time` is NOT in the newly-fetched available slots,
-    //    someone else must have taken it => show alert in Hebrew and stop
-    if (!availableSlots.includes(time)) {
-      alert("אופס! נראה שמישהו אחר כבר קבע את השעה הזו. אנא בחרו שעה אחרת.");
+    // 1) Validate the form fields
+    const isValid = validateForm();
+    if (!isValid) {
+      const firstError = document.querySelector('.is-invalid');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        console.log('Form validation failed.');
+      }
       return;
     }
-  } catch (err) {
-    console.error("Final availability check failed:", err);
-    // If for some reason we can't check availability,
-    // show an error alert in Hebrew
-    alert("שגיאה בבדיקה הסופית. אנא נסו שוב מאוחר יותר.");
-    return;
-  }
 
-  // 5) If still available, proceed with the normal booking
-  try {
-    const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ serviceType, date, time, firstName, lastName, phone })
-    });
+    // 2) Gather form data
+    const serviceType = haircutTypeSelect.value;
+    const date = dateInput.value;
+    const time = timeSelect.value;
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
 
-    const data = await response.json();
-    if (data.error) {
-      showValidationError(timeSelect, `לא ניתן לקבוע את התור: ${data.error}`);
-    } else {
-      // Success => store details, go to confirmation page
-      const appointmentDetails = {
-        firstName,
-        lastName,
-        date,
-        time,
-        haircutType: serviceType
-      };
-      localStorage.setItem('appointmentDetails', JSON.stringify(appointmentDetails));
-      window.location.href = 'confirmation.html';
+    console.log(`Form Data - ServiceType: ${serviceType}, Date: ${date}, Time: ${time}, Name: ${firstName} ${lastName}, Phone: ${phone}`);
+
+    const serviceTypeHebrew = {
+      Gvanim: 'גוונים',
+      Keratin: 'טיפול קרטין',
+      Ampule: 'אמפולה',
+      ManWithoutBeard: 'תספורת גברים ללא זקן',
+      ManWithBeard: 'תספורת גברים עם זקן',
+      Woman: 'תספורת נשים',
+      BlowDry: 'פן',
+      WomanAndBlowDry: 'תספורת נשים + פן',
+      HairColoring: 'צבע שורש',
+      InoaRootColoring: 'צבע שורש אינואה',
+      ColorAndBlowDry: 'צבע שורש + פן',
+      ColorAndWoman: 'צבע שורש + תספורת נשים',
+      ColorAndWomanAndBlowDry: 'צבע שורש + תספורת נשים + פן',
+      InoaRootColoringAndBlowDry: 'צבע שורש אינואה + פן',
+      InoaRootColoringAndWoman: 'צבע שורש אינואה + תספורת נשים',
+      InoaRootColoringAndWomanAndBlowDry: 'צבע שורש אינואה + תספורת נשים + פן'
+      // Add other mappings if necessary
+    };
+
+    // 3) If it's one of the 3 special services:
+    // => open WhatsApp and SKIP normal booking
+    if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
+      const serviceHebrew = serviceTypeHebrew[serviceType] || serviceType;
+      const baseWhatsappUrl = 'https://api.whatsapp.com/send';
+      const phoneNumber = '972547224551'; 
+      const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceHebrew}.`;
+
+      const whatsappLink = `${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`;
+      console.log(`Redirecting to WhatsApp with message: ${textMessage}`);
+      window.open(whatsappLink, '_blank');
+      return; // Stop here
     }
-  } catch (err) {
-    console.error('Booking failed', err);
-    showValidationError(null, 'התרחשה שגיאה בקביעת התור. אנא נסו שוב מאוחר יותר.');
-  }
-});
+
+    // -----------------------------------------------------------
+    // 4) For normal services, do a *final check* on availability
+    // -----------------------------------------------------------
+    try {
+      // a) Ask the server for the current availability again
+      console.log('Performing final availability check.');
+      const finalCheckResponse = await fetch(`${SERVER_BASE_URL}/get-availability`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, serviceType })
+      });
+      const finalCheckData = await finalCheckResponse.json();
+
+      const availableSlots = finalCheckData.availableSlots || [];
+
+      // b) If the chosen `time` is NOT in the newly-fetched available slots,
+      //    someone else must have taken it => show alert in Hebrew and stop
+      if (!availableSlots.includes(time)) {
+        alert("אופס! נראה שמישהו אחר כבר קבע את השעה הזו. אנא בחרו שעה אחרת.");
+        console.log(`Chosen time ${time} is no longer available.`);
+        return;
+      }
+      console.log(`Chosen time ${time} is still available.`);
+    } catch (err) {
+      console.error("Final availability check failed:", err);
+      // If for some reason we can't check availability,
+      // show an error alert in Hebrew
+      alert("שגיאה בבדיקה הסופית. אנא נסו שוב מאוחר יותר.");
+      return;
+    }
+
+    // 5) If still available, proceed with the normal booking
+    try {
+      console.log('Proceeding with booking appointment.');
+      const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceType, date, time, firstName, lastName, phone })
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        showValidationError(timeSelect, `לא ניתן לקבוע את התור: ${data.error}`);
+        console.log(`Booking error: ${data.error}`);
+      } else {
+        // Success => store details, go to confirmation page
+        const appointmentDetails = {
+          firstName,
+          lastName,
+          date,
+          time,
+          haircutType: serviceType
+        };
+        localStorage.setItem('appointmentDetails', JSON.stringify(appointmentDetails));
+        console.log('Appointment booked successfully. Redirecting to confirmation page.');
+        window.location.href = 'confirmation.html';
+      }
+    } catch (err) {
+      console.error('Booking failed', err);
+      showValidationError(null, 'התרחשה שגיאה בקביעת התור. אנא נסו שוב מאוחר יותר.');
+    }
+  });
 
   // ----------------------------------------------------
   // 6) Helper Functions for Validation and Error Handling
@@ -220,6 +253,7 @@ bookingForm.addEventListener('submit', async function(event) {
     if (!haircutTypeSelect.value) {
       showValidationError(haircutTypeSelect, 'אנא בחרו סוג שירות.');
       valid = false;
+      console.log('Service type validation failed.');
     } else {
       removeValidationError(haircutTypeSelect);
     }
@@ -228,6 +262,7 @@ bookingForm.addEventListener('submit', async function(event) {
     if (!dateInput.value) {
       showValidationError(dateInput, 'אנא בחרו תאריך.');
       valid = false;
+      console.log('Date validation failed.');
     } else {
       removeValidationError(dateInput);
     }
@@ -236,6 +271,7 @@ bookingForm.addEventListener('submit', async function(event) {
     if (!timeSelect.value) {
       showValidationError(timeSelect, 'אנא בחרו שעה.');
       valid = false;
+      console.log('Time validation failed.');
     } else {
       removeValidationError(timeSelect);
     }
@@ -246,9 +282,11 @@ bookingForm.addEventListener('submit', async function(event) {
     if (!firstName) {
       showValidationError(firstNameInput, 'אנא הזינו את השם הפרטי.');
       valid = false;
+      console.log('First name validation failed.');
     } else if (!namePattern.test(firstName)) {
       showValidationError(firstNameInput, 'השם הפרטי יכול להכיל רק אותיות בעברית או באנגלית.');
       valid = false;
+      console.log('First name format invalid.');
     } else {
       removeValidationError(firstNameInput);
     }
@@ -259,9 +297,11 @@ bookingForm.addEventListener('submit', async function(event) {
     if (!lastName) {
       showValidationError(lastNameInput, 'אנא הזינו את שם המשפחה.');
       valid = false;
+      console.log('Last name validation failed.');
     } else if (!namePattern.test(lastName)) {
       showValidationError(lastNameInput, 'שם המשפחה יכול להכיל רק אותיות בעברית או באנגלית.');
       valid = false;
+      console.log('Last name format invalid.');
     } else {
       removeValidationError(lastNameInput);
     }
@@ -272,9 +312,11 @@ bookingForm.addEventListener('submit', async function(event) {
     if (!phone) {
       showValidationError(phoneInput, 'אנא הזינו את מספר הטלפון.');
       valid = false;
+      console.log('Phone validation failed.');
     } else if (!phonePattern.test(phone)) {
       showValidationError(phoneInput, 'מספר הטלפון חייב להכיל בדיוק 10 ספרות.');
       valid = false;
+      console.log('Phone format invalid.');
     } else {
       removeValidationError(phoneInput);
     }
@@ -292,6 +334,7 @@ bookingForm.addEventListener('submit', async function(event) {
         inputElement.parentElement.appendChild(feedback);
       }
       feedback.textContent = message;
+      console.log(`Validation error for ${inputElement.id}: ${message}`);
     } else {
       // General form error
       let formError = bookingForm.querySelector('.form-error');
@@ -301,6 +344,7 @@ bookingForm.addEventListener('submit', async function(event) {
         bookingForm.prepend(formError);
       }
       formError.textContent = message;
+      console.log(`Form error: ${message}`);
     }
   }
 
@@ -311,6 +355,7 @@ bookingForm.addEventListener('submit', async function(event) {
       if (feedback) {
         feedback.textContent = '';
       }
+      console.log(`Validation cleared for ${inputElement.id}`);
     }
   }
 
@@ -382,6 +427,7 @@ bookingForm.addEventListener('submit', async function(event) {
           if (nextStep) {
             nextStep.classList.add('active');
             updateProgressBar(i + 1);
+            console.log(`Moved to step ${i + 1}`);
           }
         }
       });
@@ -396,6 +442,7 @@ bookingForm.addEventListener('submit', async function(event) {
         if (prevStep) {
           prevStep.classList.add('active');
           updateProgressBar(i - 1);
+          console.log(`Moved back to step ${i - 1}`);
         }
       });
     }
@@ -407,6 +454,7 @@ bookingForm.addEventListener('submit', async function(event) {
     progressBar.style.width = `${percentage}%`;
     progressBar.setAttribute('aria-valuenow', step);
     progressBar.textContent = `${step}/${totalSteps}`;
+    console.log(`Progress bar updated to: ${step}/${totalSteps}`);
   }
 
   // Initialize progress bar at step 1

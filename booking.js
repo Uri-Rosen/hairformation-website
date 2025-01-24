@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ----------------------------------------------------
   // 1) Configure the base URL of your Node server
   // ----------------------------------------------------
-  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com'; // Update if different
+  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com'; // Adjust to your server's URL
 
   // ----------------------------------------------------
   // 2) Get references to form elements
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const dateInput = document.getElementById('date');
   const timeSelect = document.getElementById('time');
   const bookingForm = document.getElementById('bookingForm');
-  const submitBtn = document.getElementById('submitBtn'); // the final button
+  const submitBtn = document.getElementById('submitBtn'); // final button
 
   // ----------------------------------------------------
   // 3) Initialize the datepicker (Bootstrap Datepicker)
@@ -29,34 +29,32 @@ document.addEventListener('DOMContentLoaded', function() {
     rtl: true
   }).on('changeDate', function(e) {
     // User selected a date from the calendar
-    const selectedDate = e.date; // a Date object
-    const formattedDate = formatDate(selectedDate); // "YYYY-MM-DD"
+    const selectedDate = e.date; 
+    const formattedDate = formatDate(selectedDate); 
     dateInput.value = formattedDate;
-    console.log(`Date selected: ${formattedDate}`);
+    console.log(`[Booking.js] Date selected: ${formattedDate}`);
 
     // After picking a date, load the available times from the server
     loadAvailableTimes(formattedDate);
   });
 
   // When user changes the service type, reset date/time,
-  // AND toggle the button color/link if it’s one of the 3 special services.
+  // AND toggle the button color if it’s a special service.
   haircutTypeSelect.addEventListener('change', function() {
     dateInput.value = ''; 
     timeSelect.innerHTML = '<option value="">בחרו שעה</option>';
     removeValidationError(haircutTypeSelect);
-    console.log(`Service type changed to: ${haircutTypeSelect.value}`);
+    console.log(`[Booking.js] Service type changed to: ${haircutTypeSelect.value}`);
 
     // Check if the selected value is one of the special services
     if (["Gvanim", "Keratin", "Ampule"].includes(haircutTypeSelect.value)) {
-      // Make the button green
       submitBtn.classList.remove('btn-primary');
       submitBtn.classList.add('btn-success');
-      console.log('Special service selected. Submit button turned green.');
+      console.log('[Booking.js] Special service selected. Button turned green.');
     } else {
-      // Revert to normal (blue)
       submitBtn.classList.remove('btn-success');
       submitBtn.classList.add('btn-primary');
-      console.log('Regular service selected. Submit button reverted to blue.');
+      console.log('[Booking.js] Regular service selected. Button reverted to blue.');
     }
   });
 
@@ -64,16 +62,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // 4) Load Available Times from Node server
   // ----------------------------------------------------
   async function loadAvailableTimes(dateStr) {
-    // If no service chosen, do nothing
     const serviceType = haircutTypeSelect.value;
     if (!serviceType) {
       timeSelect.innerHTML = '<option value="">בחרו סוג שירות קודם</option>';
-      console.log('No service type selected. Awaiting user selection.');
+      console.log('[Booking.js] No service type selected yet. Aborting availability load.');
       return;
     }
 
     timeSelect.innerHTML = '<option value="">טוען...</option>';
-    console.log(`Loading available times for date: ${dateStr}, serviceType: ${serviceType}`);
+    console.log(`[Booking.js] Loading available times. date=${dateStr}, serviceType=${serviceType}`);
 
     try {
       const response = await fetch(`${SERVER_BASE_URL}/get-availability`, {
@@ -84,30 +81,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const data = await response.json();
       if (data.error) {
-        // If the server returned an error
         showValidationError(timeSelect, data.error);
         timeSelect.innerHTML = '<option value="">אין שעות פנויות</option>';
-        console.log(`Error fetching availability: ${data.error}`);
+        console.log(`[Booking.js] Error from server: ${data.error}`);
         return;
       }
 
       const slots = data.availableSlots || [];
       if (slots.length === 0) {
         timeSelect.innerHTML = '<option value="">אין שעות פנויות</option>';
-        console.log('No available slots found.');
+        console.log('[Booking.js] No available slots returned from server.');
       } else {
         timeSelect.innerHTML = '<option value="">בחרו שעה</option>';
-        slots.forEach(time => {
+        slots.forEach(t => {
           const option = document.createElement('option');
-          option.value = time;   // e.g. "09:30"
-          option.textContent = time;
+          option.value = t;   // e.g. "09:30"
+          option.textContent = t;
           timeSelect.appendChild(option);
         });
-        console.log(`Available slots loaded: ${slots.join(', ')}`);
+        console.log(`[Booking.js] Received available slots: ${slots.join(', ')}`);
       }
       removeValidationError(timeSelect);
     } catch (err) {
-      console.error('Failed to load times', err);
+      console.error('[Booking.js] Failed to load times:', err);
       showValidationError(timeSelect, 'שגיאה בטעינת הזמנים');
       timeSelect.innerHTML = '<option value="">שגיאה בטעינת הזמנים</option>';
     }
@@ -118,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ----------------------------------------------------
   bookingForm.addEventListener('submit', async function(event) {
     event.preventDefault();
-    console.log('Booking form submitted.');
+    console.log('[Booking.js] Booking form submitted.');
 
     // 1) Validate the form fields
     const isValid = validateForm();
@@ -126,8 +122,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const firstError = document.querySelector('.is-invalid');
       if (firstError) {
         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        console.log('Form validation failed.');
       }
+      console.log('[Booking.js] Form validation failed. Aborting submission.');
       return;
     }
 
@@ -139,8 +135,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastName = document.getElementById('lastName').value.trim();
     const phone = document.getElementById('phone').value.trim();
 
-    console.log(`Form Data - ServiceType: ${serviceType}, Date: ${date}, Time: ${time}, Name: ${firstName} ${lastName}, Phone: ${phone}`);
+    console.log(`[Booking.js] Final Form Data => serviceType=${serviceType}, date=${date}, time=${time}, name=${firstName} ${lastName}, phone=${phone}`);
 
+    // Hebrew mapping for special services
     const serviceTypeHebrew = {
       Gvanim: 'גוונים',
       Keratin: 'טיפול קרטין',
@@ -158,57 +155,50 @@ document.addEventListener('DOMContentLoaded', function() {
       InoaRootColoringAndBlowDry: 'צבע שורש אינואה + פן',
       InoaRootColoringAndWoman: 'צבע שורש אינואה + תספורת נשים',
       InoaRootColoringAndWomanAndBlowDry: 'צבע שורש אינואה + תספורת נשים + פן'
-      // Add other mappings if necessary
+      // Additional mappings if needed
     };
 
-    // 3) If it's one of the 3 special services:
-    // => open WhatsApp and SKIP normal booking
+    // 3) If it's one of the 3 special services => open WhatsApp & skip normal booking
     if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
       const serviceHebrew = serviceTypeHebrew[serviceType] || serviceType;
       const baseWhatsappUrl = 'https://api.whatsapp.com/send';
-      const phoneNumber = '972547224551'; 
+      const phoneNumber = '972547224551';
       const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceHebrew}.`;
 
+      console.log('[Booking.js] Special service chosen, redirecting to WhatsApp:', textMessage);
       const whatsappLink = `${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`;
-      console.log(`Redirecting to WhatsApp with message: ${textMessage}`);
       window.open(whatsappLink, '_blank');
-      return; // Stop here
+      return;
     }
 
     // -----------------------------------------------------------
-    // 4) For normal services, do a *final check* on availability
+    // 4) Final availability check
     // -----------------------------------------------------------
+    console.log('[Booking.js] Performing final availability check...');
     try {
-      // a) Ask the server for the current availability again
-      console.log('Performing final availability check.');
       const finalCheckResponse = await fetch(`${SERVER_BASE_URL}/get-availability`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date, serviceType })
       });
       const finalCheckData = await finalCheckResponse.json();
+      const latestSlots = finalCheckData.availableSlots || [];
 
-      const availableSlots = finalCheckData.availableSlots || [];
-
-      // b) If the chosen `time` is NOT in the newly-fetched available slots,
-      //    someone else must have taken it => show alert in Hebrew and stop
-      if (!availableSlots.includes(time)) {
+      if (!latestSlots.includes(time)) {
+        console.log(`[Booking.js] Slot ${time} no longer available according to final check.`);
         alert("אופס! נראה שמישהו אחר כבר קבע את השעה הזו. אנא בחרו שעה אחרת.");
-        console.log(`Chosen time ${time} is no longer available.`);
         return;
       }
-      console.log(`Chosen time ${time} is still available.`);
+      console.log(`[Booking.js] Final check passed. Slot ${time} is still available.`);
     } catch (err) {
-      console.error("Final availability check failed:", err);
-      // If for some reason we can't check availability,
-      // show an error alert in Hebrew
+      console.error('[Booking.js] Final availability check failed:', err);
       alert("שגיאה בבדיקה הסופית. אנא נסו שוב מאוחר יותר.");
       return;
     }
 
-    // 5) If still available, proceed with the normal booking
+    // 5) Attempt booking
+    console.log('[Booking.js] Attempting to book appointment now...');
     try {
-      console.log('Proceeding with booking appointment.');
       const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -218,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const data = await response.json();
       if (data.error) {
         showValidationError(timeSelect, `לא ניתן לקבוע את התור: ${data.error}`);
-        console.log(`Booking error: ${data.error}`);
+        console.log(`[Booking.js] Booking error from server: ${data.error}`);
       } else {
         // Success => store details, go to confirmation page
         const appointmentDetails = {
@@ -229,11 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
           haircutType: serviceType
         };
         localStorage.setItem('appointmentDetails', JSON.stringify(appointmentDetails));
-        console.log('Appointment booked successfully. Redirecting to confirmation page.');
+        console.log('[Booking.js] Booking successful. Redirecting to confirmation page...');
         window.location.href = 'confirmation.html';
       }
     } catch (err) {
-      console.error('Booking failed', err);
+      console.error('[Booking.js] Booking failed:', err);
       showValidationError(null, 'התרחשה שגיאה בקביעת התור. אנא נסו שוב מאוחר יותר.');
     }
   });
@@ -241,9 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ----------------------------------------------------
   // 6) Helper Functions for Validation and Error Handling
   // ----------------------------------------------------
-
-  // Updated Regex patterns
-  const phonePattern = /^\d{10}$/; // Ensures exactly 10 digits
+  const phonePattern = /^\d{10}$/;
   const namePattern = /^[A-Za-zא-ת]+$/;
 
   function validateForm() {
@@ -252,8 +240,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validate Service Type
     if (!haircutTypeSelect.value) {
       showValidationError(haircutTypeSelect, 'אנא בחרו סוג שירות.');
+      console.log('[Booking.js] Validation: No service type chosen.');
       valid = false;
-      console.log('Service type validation failed.');
     } else {
       removeValidationError(haircutTypeSelect);
     }
@@ -261,8 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validate Date
     if (!dateInput.value) {
       showValidationError(dateInput, 'אנא בחרו תאריך.');
+      console.log('[Booking.js] Validation: No date chosen.');
       valid = false;
-      console.log('Date validation failed.');
     } else {
       removeValidationError(dateInput);
     }
@@ -270,8 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validate Time
     if (!timeSelect.value) {
       showValidationError(timeSelect, 'אנא בחרו שעה.');
+      console.log('[Booking.js] Validation: No time chosen.');
       valid = false;
-      console.log('Time validation failed.');
     } else {
       removeValidationError(timeSelect);
     }
@@ -281,12 +269,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const firstName = firstNameInput.value.trim();
     if (!firstName) {
       showValidationError(firstNameInput, 'אנא הזינו את השם הפרטי.');
+      console.log('[Booking.js] Validation: First name missing.');
       valid = false;
-      console.log('First name validation failed.');
     } else if (!namePattern.test(firstName)) {
       showValidationError(firstNameInput, 'השם הפרטי יכול להכיל רק אותיות בעברית או באנגלית.');
+      console.log('[Booking.js] Validation: First name format invalid.');
       valid = false;
-      console.log('First name format invalid.');
     } else {
       removeValidationError(firstNameInput);
     }
@@ -296,27 +284,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastName = lastNameInput.value.trim();
     if (!lastName) {
       showValidationError(lastNameInput, 'אנא הזינו את שם המשפחה.');
+      console.log('[Booking.js] Validation: Last name missing.');
       valid = false;
-      console.log('Last name validation failed.');
     } else if (!namePattern.test(lastName)) {
       showValidationError(lastNameInput, 'שם המשפחה יכול להכיל רק אותיות בעברית או באנגלית.');
+      console.log('[Booking.js] Validation: Last name format invalid.');
       valid = false;
-      console.log('Last name format invalid.');
     } else {
       removeValidationError(lastNameInput);
     }
 
     // Validate Phone
     const phoneInput = document.getElementById('phone');
-    const phone = phoneInput.value.trim();
-    if (!phone) {
+    const phoneVal = phoneInput.value.trim();
+    if (!phoneVal) {
       showValidationError(phoneInput, 'אנא הזינו את מספר הטלפון.');
+      console.log('[Booking.js] Validation: Phone missing.');
       valid = false;
-      console.log('Phone validation failed.');
-    } else if (!phonePattern.test(phone)) {
+    } else if (!phonePattern.test(phoneVal)) {
       showValidationError(phoneInput, 'מספר הטלפון חייב להכיל בדיוק 10 ספרות.');
+      console.log('[Booking.js] Validation: Phone format invalid.');
       valid = false;
-      console.log('Phone format invalid.');
     } else {
       removeValidationError(phoneInput);
     }
@@ -334,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
         inputElement.parentElement.appendChild(feedback);
       }
       feedback.textContent = message;
-      console.log(`Validation error for ${inputElement.id}: ${message}`);
+      console.log(`[Booking.js] Validation Error => Element: ${inputElement.id}, Message: ${message}`);
     } else {
       // General form error
       let formError = bookingForm.querySelector('.form-error');
@@ -344,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
         bookingForm.prepend(formError);
       }
       formError.textContent = message;
-      console.log(`Form error: ${message}`);
+      console.log(`[Booking.js] Form-level error: ${message}`);
     }
   }
 
@@ -355,8 +343,55 @@ document.addEventListener('DOMContentLoaded', function() {
       if (feedback) {
         feedback.textContent = '';
       }
-      console.log(`Validation cleared for ${inputElement.id}`);
     }
+  }
+
+  // ----------------------------------------------------
+  // 7) (Optional) Multi-Step Navigation / Progress
+  // ----------------------------------------------------
+  const totalSteps = 6;
+  for (let i = 1; i <= totalSteps; i++) {
+    const nextBtn = document.getElementById(`nextBtn-${i}`);
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function() {
+        const currentStep = document.getElementById(`step-${i}`);
+        const nextStep = document.getElementById(`step-${i + 1}`);
+        const stepIsValid = validateStep(currentStep);
+        if (stepIsValid) {
+          currentStep.classList.remove('active');
+          if (nextStep) {
+            nextStep.classList.add('active');
+            updateProgressBar(i + 1);
+            console.log(`[Booking.js] Moved from step ${i} to ${i+1}.`);
+          }
+        } else {
+          console.log(`[Booking.js] Step ${i} validation failed, staying on this step.`);
+        }
+      });
+    }
+
+    const prevBtn = document.getElementById(`prevBtn-${i}`);
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function() {
+        const currentStep = document.getElementById(`step-${i}`);
+        const prevStep = document.getElementById(`step-${i - 1}`);
+        currentStep.classList.remove('active');
+        if (prevStep) {
+          prevStep.classList.add('active');
+          updateProgressBar(i - 1);
+          console.log(`[Booking.js] Went back from step ${i} to ${i-1}.`);
+        }
+      });
+    }
+  }
+
+  function updateProgressBar(step) {
+    const progressBar = document.querySelector('.progress-bar');
+    const percentage = (step / totalSteps) * 100;
+    progressBar.style.width = `${percentage}%`;
+    progressBar.setAttribute('aria-valuenow', step);
+    progressBar.textContent = `${step}/${totalSteps}`;
+    console.log(`[Booking.js] Progress bar updated => ${step}/${totalSteps}`);
   }
 
   function validateStep(currentStep) {
@@ -410,58 +445,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // ----------------------------------------------------
-  // 7) Step Navigation / Progress Bar Enhancements
-  // ----------------------------------------------------
-  const totalSteps = 6;
-  for (let i = 1; i <= totalSteps; i++) {
-    const nextBtn = document.getElementById(`nextBtn-${i}`);
-    if (nextBtn) {
-      nextBtn.addEventListener('click', function() {
-        const currentStep = document.getElementById(`step-${i}`);
-        const nextStep = document.getElementById(`step-${i + 1}`);
-        // Validate current step's inputs
-        const stepIsValid = validateStep(currentStep);
-        if (stepIsValid) {
-          currentStep.classList.remove('active');
-          if (nextStep) {
-            nextStep.classList.add('active');
-            updateProgressBar(i + 1);
-            console.log(`Moved to step ${i + 1}`);
-          }
-        }
-      });
-    }
-
-    const prevBtn = document.getElementById(`prevBtn-${i}`);
-    if (prevBtn) {
-      prevBtn.addEventListener('click', function() {
-        const currentStep = document.getElementById(`step-${i}`);
-        const prevStep = document.getElementById(`step-${i - 1}`);
-        currentStep.classList.remove('active');
-        if (prevStep) {
-          prevStep.classList.add('active');
-          updateProgressBar(i - 1);
-          console.log(`Moved back to step ${i - 1}`);
-        }
-      });
-    }
-  }
-
-  function updateProgressBar(step) {
-    const progressBar = document.querySelector('.progress-bar');
-    const percentage = (step / totalSteps) * 100;
-    progressBar.style.width = `${percentage}%`;
-    progressBar.setAttribute('aria-valuenow', step);
-    progressBar.textContent = `${step}/${totalSteps}`;
-    console.log(`Progress bar updated to: ${step}/${totalSteps}`);
-  }
-
   // Initialize progress bar at step 1
   updateProgressBar(1);
 
   // ----------------------------------------------------
-  // 8) Helper function to format date objects => YYYY-MM-DD
+  // 8) Helper: formatDate to YYYY-MM-DD
   // ----------------------------------------------------
   function formatDate(dateObj) {
     const year = dateObj.getFullYear();

@@ -1,6 +1,6 @@
 // booking.js
 document.addEventListener('DOMContentLoaded', function() {
-  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com'; // Adjust to your actual server if needed
+  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com'; // Adjust if needed
 
   const haircutTypeSelect = document.getElementById('haircutType');
   const dateInput = document.getElementById('date');
@@ -73,10 +73,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const slots = data.availableSlots || [];
       const dayEvents = data.dayEvents || [];
 
-      // 1) Log the other appointments for that day
+      // Log other appointments
       console.log('[Booking.js] Day events for chosen date:', dayEvents);
-
-      // 2) Log the available slots for that service
+      // Log available slots
       console.log('[Booking.js] Available slots for chosen service:', slots);
 
       if (slots.length === 0) {
@@ -133,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Final check on availability
+    // Final check
     console.log('[Booking.js] Performing final availability check...');
     try {
       const finalCheckRes = await fetch(`${SERVER_BASE_URL}/get-availability`, {
@@ -157,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Book the appointment
+    // Book
     console.log('[Booking.js] Sending /book-appointment request...');
     try {
       const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
@@ -188,9 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ----------------------------------------------------
-  // Validation & Helper Stuff
-  // ----------------------------------------------------
+  // Validation & Helpers
   const phonePattern = /^\d{10}$/; 
   const namePattern = /^[A-Za-zא-ת]+$/;
 
@@ -290,7 +287,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Step nav & progress bar if using multi-step form
   const totalSteps = 6;
   for (let i = 1; i <= totalSteps; i++) {
     const nextBtn = document.getElementById(`nextBtn-${i}`);
@@ -332,7 +328,6 @@ document.addEventListener('DOMContentLoaded', function() {
         valid = false;
       }
     });
-
     return valid;
   }
 
@@ -356,7 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
     progressBar.textContent = `${step}/${totalSteps}`;
   }
 
-  // Helper to format date => YYYY-MM-DD
   function formatDate(dateObj) {
     const year = dateObj.getFullYear();
     const month = String(dateObj.getMonth() + 1).padStart(2, '0');

@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const timeSelect = document.getElementById('time');
   const bookingForm = document.getElementById('bookingForm');
   const submitBtn = document.getElementById('submitBtn');
-
+  
   $('#date').datepicker({
     format: 'yyyy-mm-dd',
     language: 'he',

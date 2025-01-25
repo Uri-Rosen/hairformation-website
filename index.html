@@ -5,12 +5,20 @@
     <title>HairFormation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- קישור לגופן Google Fonts -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap">
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap"
+    >
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    >
     <!-- Bootstrap RTL CSS -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/4.5.2-1/bootstrap-rtl.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/4.5.2-1/bootstrap-rtl.min.css"
+    >
     <!-- CSS מותאם אישית -->
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -19,15 +27,24 @@
         <!-- תפריט ניווט -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <a class="navbar-brand" href="index.html">
-                <img src="images/logo.png" alt="לוגו המספרה" height="60">
+                <!-- Removed height="60" so the CSS can control size -->
+                <img src="images/logo.png" alt="לוגו המספרה">
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse"
-                    data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-                    aria-label="החלף ניווט">
+            <button
+              class="navbar-toggler"
+              type="button"
+              data-toggle="collapse"
+              data-target="#navbarNav"
+              aria-controls="navbarNav"
+              aria-expanded="false"
+              aria-label="החלף ניווט"
+            >
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse justify-content-end"
-                 id="navbarNav">
+            <div
+              class="collapse navbar-collapse justify-content-end"
+              id="navbarNav"
+            >
                 <ul class="navbar-nav">
                     <li class="nav-item active">
                         <a class="nav-link" href="#">בית</a>
@@ -70,32 +87,72 @@
                     <!-- Carousel items -->
                     <div class="carousel-inner">
                         <div class="carousel-item active">
-                            <img src="images/example1.jpg" class="d-block w-100" alt="תספורת 1">
+                            <img
+                              src="images/example1.jpg"
+                              class="d-block w-100"
+                              alt="תספורת 1"
+                            >
                         </div>
                         <div class="carousel-item">
-                            <img src="images/example2.jpg" class="d-block w-100" alt="תספורת 2">
+                            <img
+                              src="images/example2.jpg"
+                              class="d-block w-100"
+                              alt="תספורת 2"
+                            >
                         </div>
                         <div class="carousel-item">
-                            <img src="images/example3.jpg" class="d-block w-100" alt="תספורת 3">
+                            <img
+                              src="images/example3.jpg"
+                              class="d-block w-100"
+                              alt="תספורת 3"
+                            >
                         </div>
                         <div class="carousel-item">
-                            <img src="images/example4.jpg" class="d-block w-100" alt="תספורת 4">
+                            <img
+                              src="images/example4.jpg"
+                              class="d-block w-100"
+                              alt="תספורת 4"
+                            >
                         </div>
                         <div class="carousel-item">
-                            <img src="images/example5.jpg" class="d-block w-100" alt="תספורת 5">
+                            <img
+                              src="images/example5.jpg"
+                              class="d-block w-100"
+                              alt="תספורת 5"
+                            >
                         </div>
                         <div class="carousel-item">
-                            <img src="images/example6.jpg" class="d-block w-100" alt="תספורת 6">
+                            <img
+                              src="images/example6.jpg"
+                              class="d-block w-100"
+                              alt="תספורת 6"
+                            >
                         </div>
                     </div>
 
                     <!-- Controls -->
-                    <a class="carousel-control-prev" href="#hairCarousel" role="button" data-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <a
+                      class="carousel-control-prev"
+                      href="#hairCarousel"
+                      role="button"
+                      data-slide="prev"
+                    >
+                        <span
+                          class="carousel-control-prev-icon"
+                          aria-hidden="true"
+                        ></span>
                         <span class="sr-only">הקודם</span>
                     </a>
-                    <a class="carousel-control-next" href="#hairCarousel" role="button" data-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <a
+                      class="carousel-control-next"
+                      href="#hairCarousel"
+                      role="button"
+                      data-slide="next"
+                    >
+                        <span
+                          class="carousel-control-next-icon"
+                          aria-hidden="true"
+                        ></span>
                         <span class="sr-only">הבא</span>
                     </a>
                 </div>
@@ -107,7 +164,10 @@
             <div class="container text-center">
                 <h2>צרו קשר</h2>
                 <p>לפרטים נוספים, שלחו לנו הודעה בוואטסאפ.</p>
-                <a href="#" id="whatsappLink" class="btn btn-success"><i class="fab fa-whatsapp"></i> שלחו הודעה בוואטסאפ</a>
+                <a href="#" id="whatsappLink" class="btn btn-success">
+                    <i class="fab fa-whatsapp"></i>
+                    שלחו הודעה בוואטסאפ
+                </a>
             </div>
         </section>
 
@@ -117,12 +177,18 @@
         </footer>
     </div>
 
-    <!-- Font Awesome Icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <!-- Font Awesome Icons (JS Kit) -->
+    <script
+      src="https://kit.fontawesome.com/a076d05399.js"
+      crossorigin="anonymous"
+    ></script>
     <!-- jQuery ו-Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.min.js"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+    ></script>
     <!-- JavaScript מותאם אישית -->
     <script src="script.js"></script>
 </body>

@@ -11,11 +11,13 @@ body {
 
 /* תפריט ניווט */
 .navbar-brand img {
-    /* Make the logo a circle: */
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    /* (Optional) Add a border to see it's definitely circular
+    border: 2px solid red !important; 
+    */
 }
 
 /* אזור הבאנר */

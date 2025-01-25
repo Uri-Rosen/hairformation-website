@@ -105,14 +105,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastName = document.getElementById('lastName').value.trim();
     const phone = document.getElementById('phone').value.trim();
 
+    // Map the service types to Hebrew for the WhatsApp message
+    let serviceInHebrew = "";
+    switch (serviceType) {
+      case "Gvanim":
+        serviceInHebrew = "גוונים";
+        break;
+      case "Keratin":
+        serviceInHebrew = "טיפול קרטין";
+        break;
+      case "Ampule":
+        serviceInHebrew = "אמפולה";
+        break;
+      default:
+        serviceInHebrew = serviceType;
+    }
+
+    // If the service type is one of the special ones, open WhatsApp message
     if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
       const baseWhatsappUrl = 'https://api.whatsapp.com/send';
       const phoneNumber = '972547224551';
-      const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceType}.`;
+      const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${serviceInHebrew}.`;
       window.open(`${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`, '_blank');
       return;
     }
 
+    // Final availability check before booking (for non-WhatsApp types)
     try {
       const finalCheckRes = await fetch(`${SERVER_BASE_URL}/get-availability`, {
         method: 'POST',
@@ -130,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // Proceed with booking
     try {
       const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
         method: 'POST',

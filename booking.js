@@ -1,18 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
   const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com';
 
-  // Map English service types to their Hebrew display names
-  const serviceTypeToHebrew = {
-    'Gvanim': 'גוונים',
-    'Keratin': 'טיפול קרטין',
-    'Ampule': 'אמפולה'
-  };
-
   const haircutTypeSelect = document.getElementById('haircutType');
   const dateInput = document.getElementById('date');
   const timeSelect = document.getElementById('time');
   const bookingForm = document.getElementById('bookingForm');
   const submitBtn = document.getElementById('submitBtn');
+
+  // Map the special services to their Hebrew names
+  const serviceTypeToHebrew = {
+    Gvanim: "גוונים",
+    Keratin: "טיפול קרטין",
+    Ampule: "אמפולה",
+  };
 
   $('#date').datepicker({
     format: 'yyyy-mm-dd',
@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
   haircutTypeSelect.addEventListener('change', function() {
     removeValidationError(haircutTypeSelect);
     if (haircutTypeSelect.value) {
-      // Check if one of the special services (coloring, keratin, ampule)
       if (["Gvanim", "Keratin", "Ampule"].includes(haircutTypeSelect.value)) {
         submitBtn.classList.remove('btn-primary');
         submitBtn.classList.add('btn-success');
@@ -113,19 +112,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastName = document.getElementById('lastName').value.trim();
     const phone = document.getElementById('phone').value.trim();
 
-    // If it's one of the special services, open WhatsApp
+    // If the chosen service is one of the three special services,
+    // open WhatsApp with Hebrew service name
     if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
       const baseWhatsappUrl = 'https://api.whatsapp.com/send';
       const phoneNumber = '972547224551';
-      // Grab the Hebrew version of the service name
-      const hebrewServiceName = serviceTypeToHebrew[serviceType] || serviceType;
-      const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${hebrewServiceName}.`;
-      
+      const hebrewService = serviceTypeToHebrew[serviceType] || serviceType;
+      const textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור בתאריך ${date} בשעה ${time} ל${hebrewService}.`;
       window.open(`${baseWhatsappUrl}?phone=${phoneNumber}&text=${encodeURIComponent(textMessage)}`, '_blank');
       return;
     }
 
-    // Otherwise, proceed with standard scheduling
+    // If not one of the special services, do the normal booking procedure
     try {
       // Final check to ensure the selected time is still available
       const finalCheckRes = await fetch(`${SERVER_BASE_URL}/get-availability`, {
@@ -170,7 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Regex patterns for validation
   const phonePattern = /^\d{10}$/;
   const namePattern = /^[A-Za-zא-ת]+$/;
 

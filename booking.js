@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     Ampule: "אמפולה",
   };
 
+  // Initialize the datepicker with Hebrew language and proper options
   $('#date').datepicker({
     format: 'yyyy-mm-dd',
     language: 'he',
@@ -112,8 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastName = document.getElementById('lastName').value.trim();
     const phone = document.getElementById('phone').value.trim();
 
-    // If the chosen service is one of the three special services,
-    // open WhatsApp with Hebrew service name
+    // For special services, open WhatsApp with a message that includes the Hebrew service name
     if (["Gvanim", "Keratin", "Ampule"].includes(serviceType)) {
       const baseWhatsappUrl = 'https://api.whatsapp.com/send';
       const phoneNumber = '972547224551';
@@ -123,9 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // If not one of the special services, do the normal booking procedure
+    // For the normal booking procedure, perform a final availability check
     try {
-      // Final check to ensure the selected time is still available
       const finalCheckRes = await fetch(`${SERVER_BASE_URL}/get-availability`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -265,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Multi-step form navigation
   const totalSteps = 6;
   for (let i = 1; i <= totalSteps; i++) {
     const nextBtn = document.getElementById(`nextBtn-${i}`);

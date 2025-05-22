@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
           haircutType: serviceType
         };
         localStorage.setItem('appointmentDetails', JSON.stringify(appointmentDetails));
-        window.location.href = 'confirmation.html';
+        window.location.href = '/confirmation/';
       }
     } catch (err) {
       showValidationError(null, 'התרחשה שגיאה בקביעת התור. אנא נסו שוב מאוחר יותר.');

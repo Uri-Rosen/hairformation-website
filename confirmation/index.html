@@ -13,6 +13,22 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/4.5.2-1/bootstrap-rtl.min.css">
     <!-- CSS מותאם אישית -->
     <link rel="stylesheet" href="../styles.css">
+    <style>
+        /* Optional: Add some styling for the appointment details box */
+        #appointmentDetails {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: inline-block; /* To make it wrap its content */
+        }
+        #appointmentDetails p {
+            margin-bottom: 0.5rem;
+            text-align: right; /* Ensure text is right-aligned within the box */
+        }
+    </style>
 </head>
 <body>
     <div class="d-flex flex-column min-vh-100">
@@ -44,20 +60,21 @@
 
         <div class="content-container container text-center">
             <h1>התור נקבע בהצלחה!</h1>
-            <p>תודה שפנית אלינו. התור שלך נקבע בהצלחה.</p>
+            <p>תודה שקבעת תור ב-HairFormation.</p>
             <!-- הצגת פרטי התור -->
             <div id="appointmentDetails">
-                <!-- הפרטים יתווספו כאן -->
+                <!-- הפרטים יתווספו כאן על ידי JavaScript -->
+                <p>טוען פרטי תור...</p>
             </div>
-            <p>נשמח לראותך ב-HairFormation.</p>
+            <p>נשמח לראותך במספרה.</p>
             <!-- הודעת הספירה לאחור -->
-            <p id="redirectMessage">תועבר לעמוד הבית בעוד <span id="countdown">5</span> שניות.</p>
-            <a href="/" class="btn btn-primary mt-4">חזרה לדף הבית</a>
+            <p id="redirectMessage">תועבר אוטומטית לעמוד הבית בעוד <span id="countdown">5</span> שניות.</p>
+            <a href="/" class="btn btn-primary mt-3 mb-3">חזרה לדף הבית</a>
         </div>
 
         <!-- Footer -->
         <footer class="footer text-center">
-            <p>&copy; 2025 HairFormation. פיתוח ועיצוב: אורי רוזן. כל הזכויות שמורות.</p>
+            <p>© 2025 HairFormation. פיתוח ועיצוב: אורי רוזן. כל הזכויות שמורות.</p>
         </footer>
     </div>
 
@@ -68,61 +85,59 @@
 
     <!-- סקריפט להצגת פרטי התור והפנייה אוטומטית -->
     <script>
-        // מיפוי סוגי שירות לקוד שלהם בעברית
-        const SERVICE_DESCRIPTIONS_HEB = {
-            ManWithoutBeard: 'תספורת גברים ללא זקן',
-            ManWithBeard: 'תספורת גברים עם זקן',
-            Woman: 'תספורת נשים',
-            HairColoring: 'צבע שורש',
-            InoaRootColoring: 'צבע שורש אינואה',
-            BlowDry: 'פן',
-            WomanAndBlowDry: 'תספורת נשים + פן',
-            ColorAndBlowDry: 'צבע שורש + פן',
-            ColorAndWoman: 'צבע שורש + תספורת נשים',
-            ColorAndWomanAndBlowDry: 'צבע שורש + תספורת נשים + פן',
-            InoaRootColoringAndBlowDry: 'צבע שורש אינואה + פן',
-            InoaRootColoringAndWoman: 'צבע שורש אינואה + תספורת נשים',
-            InoaRootColoringAndWomanAndBlowDry: 'צבע שורש אינואה + תספורת נשים + פן',
-            Gvanim: 'גוונים',
-            Keratin: 'טיפול קרטין',
-            Ampule: 'אמפולה'
-        };
-
-        // קבלת פרטי התור מ-localStorage
-        const appointmentDetails = JSON.parse(localStorage.getItem('appointmentDetails'));
-
-        if (appointmentDetails) {
+        document.addEventListener('DOMContentLoaded', function() {
+            // קבלת פרטי התור מ-localStorage
+            const appointmentDetailsString = localStorage.getItem('appointmentDetails');
             const detailsDiv = document.getElementById('appointmentDetails');
-            const dateDisplay = appointmentDetails.date.split('-').reverse().join('/');
 
-            // קבלת התיאור בעברית של סוג השירות
-            const serviceHebrew = SERVICE_DESCRIPTIONS_HEB[appointmentDetails.haircutType] || appointmentDetails.haircutType;
+            if (appointmentDetailsString) {
+                try {
+                    const appointmentDetails = JSON.parse(appointmentDetailsString);
+                    const dateParts = appointmentDetails.date.split('-'); // YYYY-MM-DD
+                    const dateDisplay = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`; // DD/MM/YYYY
 
-            detailsDiv.innerHTML = `
-                <p><strong>שם:</strong> ${appointmentDetails.firstName} ${appointmentDetails.lastName}</p>
-                <p><strong>תאריך:</strong> ${dateDisplay}</p>
-                <p><strong>שעה:</strong> ${appointmentDetails.time}</p>
-                <p><strong>סוג שירות:</strong> ${serviceHebrew}</p>
-            `;
-            // מחיקת הנתונים מ-localStorage
-            localStorage.removeItem('appointmentDetails');
-        } else {
-            // אם אין פרטים, ייתכן שהמשתמש ניגש ישירות לעמוד
-            document.getElementById('appointmentDetails').innerHTML = '<p>לא נמצאו פרטי תור.</p>';
-        }
+                    // The serviceName is now directly the Hebrew name
+                    const serviceHebrew = appointmentDetails.serviceName || 'לא צוין שירות';
 
-        // הפנייה אוטומטית לעמוד הבית עם ספירה לאחור
-        let countdown = 5; // מספר השניות לפני ההפנייה
-        const countdownElement = document.getElementById('countdown');
-
-        const countdownInterval = setInterval(() => {
-            countdown--;
-            countdownElement.textContent = countdown;
-            if (countdown <= 0) {
-                clearInterval(countdownInterval);
-                window.location.href = '/';
+                    detailsDiv.innerHTML = `
+                        <p><strong>שם:</strong> ${appointmentDetails.clientName || 'לא צוין'}</p>
+                        <p><strong>תאריך:</strong> ${dateDisplay}</p>
+                        <p><strong>שעה:</strong> ${appointmentDetails.time}</p>
+                        <p><strong>סוג שירות:</strong> ${serviceHebrew}</p>
+                    `;
+                    // מחיקת הנתונים מ-localStorage לאחר השימוש
+                    localStorage.removeItem('appointmentDetails');
+                } catch (e) {
+                    console.error("Error parsing appointment details from localStorage:", e);
+                    detailsDiv.innerHTML = '<p>שגיאה בטעינת פרטי התור.</p>';
+                }
+            } else {
+                // אם אין פרטים, ייתכן שהמשתמש ניגש ישירות לעמוד
+                detailsDiv.innerHTML = '<p>לא נמצאו פרטי תור. ייתכן שרעננת את הדף או שניגשת לכאן ישירות.</p>';
+                document.getElementById('redirectMessage').textContent = 'תועבר לעמוד הבית.'; // Adjust redirect message
             }
-        }, 1000); // עדכון כל שנייה (1000 מילישניות)
+
+            // הפנייה אוטומטית לעמוד הבית עם ספירה לאחור
+            let countdown = 5; // מספר השניות לפני ההפנייה
+            const countdownElement = document.getElementById('countdown');
+            const redirectMessageElement = document.getElementById('redirectMessage');
+
+            if (countdownElement) { // Check if element exists before trying to update
+                 const countdownInterval = setInterval(() => {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = '/'; // Redirect to home page
+                    }
+                }, 1000); // עדכון כל שנייה (1000 מילישניות)
+            } else if (redirectMessageElement) {
+                // Fallback if only redirectMessage is there (e.g., no countdown span)
+                setTimeout(() => {
+                     window.location.href = '/';
+                }, 5000);
+            }
+        });
     </script>
 </body>
 </html>

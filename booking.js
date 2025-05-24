@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const submitBtn = document.getElementById('submitBtn');
 
   let allServicesData = [];
+  let currentServiceKeyForAutoAdvance = null; // To help with re-selection logic
 
   async function loadServices() {
     try {
@@ -60,14 +61,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  haircutTypeSelect.addEventListener('change', function() {
+  // This function will handle the logic after a service is confirmed (either by change or re-confirmation)
+  function processServiceSelection() {
     removeValidationError(haircutTypeSelect);
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
 
-    timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>'; // Clear time slots on service change
-    console.log('[haircutTypeSelect change] Selected service key:', this.value);
+    timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
+    console.log('[processServiceSelection] Current service key:', haircutTypeSelect.value);
 
     if (selectedOption && selectedOption.value) {
+      currentServiceKeyForAutoAdvance = selectedOption.value; // Store the current valid selection
       const isBookableOnline = selectedOption.dataset.bookableOnline === 'true';
       const isManualTimeSelection = selectedOption.dataset.isManualTimeSelection === 'true';
 
@@ -80,35 +83,60 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
       } else {
-        submitBtn.textContent = 'בחרו שירות';
+        submitBtn.textContent = 'בחרו שירות'; // Should ideally not happen
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
       }
 
-      // If a date is already selected, load times. This is useful if user goes back,
-      // changes service, and date was already picked.
+      // Try to advance to date step
+      goToStep(1); // Go to date selection (0-indexed 1)
+
+      // If a date is already selected, try to load times for the new service
+      // and potentially advance further to time selection.
       if (dateInput.value && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value)) {
-          console.log('[haircutTypeSelect change] Date already selected, loading times for new service.');
+          console.log('[processServiceSelection] Date already selected, loading times.');
           loadAvailableTimes(dateInput.value);
-          // Don't auto-advance here; let the "Next" button for Step 1 handle it,
-          // or if they pick a date next, that will advance.
+          goToStep(2); // Advance to time selection (0-indexed 2)
+      } else {
+          // If no date, just show datepicker (already advanced to date step)
+          $('#date').datepicker('show');
       }
     } else {
+        currentServiceKeyForAutoAdvance = null; // No valid service selected
         submitBtn.textContent = 'קבעו תור';
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
+        // If user deselects to the placeholder, don't auto-advance back to step 0 here,
+        // they are already on step 0.
     }
-  });
+  }
+
+  haircutTypeSelect.addEventListener('change', processServiceSelection);
+
+  // To handle the "re-selection" case when coming back to step 1:
+  // If step 1 becomes active and a service is already selected,
+  // we need a way to re-trigger the advancement logic.
+  // We can do this by checking when goToStep(0) is called.
+  // However, a simpler way is that the user will typically click a "Previous" button to get to step 0.
+  // When they are on step 0, if `haircutTypeSelect.value` is already set,
+  // they would expect that if they don't change it, they can still proceed.
+  // Since we removed nextBtn-1, the only way to proceed from step 0 is to select a service (triggering 'change')
+  // or to have a previously selected service and then pick a date.
+
+  // The `processServiceSelection` will be called on 'change'.
+  // If they go back to step 0, and `haircutTypeSelect` has a value,
+  // and then they click on the date picker (which is on step 1),
+  // the `processServiceSelection` should have already set the context.
 
   timeSelect.addEventListener('change', function() {
     removeValidationError(timeSelect);
-    if (timeSelect.value && timeSelect.value !== "") { // Ensure a valid time is selected
+    if (timeSelect.value && timeSelect.value !== "") {
       goToStep(3); // To First Name (0-indexed)
     }
   });
 
   async function loadAvailableTimes(dateStr) {
-    const serviceKey = haircutTypeSelect.value;
+    const serviceKey = haircutTypeSelect.value; // Use the current value
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
 
     console.log('[loadAvailableTimes] Called. Date:', dateStr, 'ServiceKey:', serviceKey);
@@ -122,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    if (!serviceKey) {
+    if (!serviceKey) { // If serviceKey is empty (e.g. placeholder selected)
         timeSelect.innerHTML = '<option value="">בחרו סוג שירות קודם</option>';
         return;
     }
@@ -227,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
       bookingForm.reset();
       $('#date').datepicker('update', '');
       timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
-      haircutTypeSelect.value = ""; // Reset service select
+      haircutTypeSelect.value = "";
       goToStep(0);
       submitBtn.disabled = false;
       submitBtn.textContent = 'קבעו תור';
@@ -312,7 +340,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const isBookableOnline = selectedOption ? selectedOption.dataset.bookableOnline === 'true' : false;
     const isManualTimeSelection = selectedOption ? selectedOption.dataset.isManualTimeSelection === 'true' : false;
 
-    // Date is required if we need to show time slots (for online or manual-with-time-suggestion)
     if (isBookableOnline || isManualTimeSelection) {
       if (!dateInput.value) {
         showValidationError(dateInput, 'אנא בחרו תאריך.');
@@ -321,8 +348,6 @@ document.addEventListener('DOMContentLoaded', function() {
         removeValidationError(dateInput);
       }
     }
-    // Time is strictly required for online booking.
-    // For manual time selection, it's optional for the form if user doesn't pick one from list.
     if (isBookableOnline) {
       if (!timeSelect.value) {
         showValidationError(timeSelect, 'אנא בחרו שעה.');
@@ -432,6 +457,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function goToStep(stepZeroIndexed) {
     console.log('[goToStep] Going to step (0-indexed):', stepZeroIndexed);
+    // Ensure stepZeroIndexed is within bounds
+    stepZeroIndexed = Math.max(0, Math.min(stepZeroIndexed, steps.length - 1));
+
     steps.forEach((step, index) => {
       step.classList.toggle('active', index === stepZeroIndexed);
     });
@@ -444,50 +472,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // --- New Event Listeners for Next/Prev Buttons ---
-  document.getElementById('nextBtn-1')?.addEventListener('click', () => { // From Service to Date
-    if (validateSingleStepInputs(steps[0])) { // Validate step 1 (service)
-        goToStep(1); // Go to step 2 (date) (0-indexed: 1)
-        const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
-        // If a date is already selected and service is valid, load times for it
-        if (selectedOption && selectedOption.value && dateInput.value && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value)) {
-            loadAvailableTimes(dateInput.value);
-            goToStep(2); // If date also valid, effectively jump to time selection
-        } else if (selectedOption && selectedOption.value) {
-            $('#date').datepicker('show'); // Show datepicker if no date yet
-        }
-    }
+  // Previous button listeners
+  document.getElementById('prevBtn-2')?.addEventListener('click', () => goToStep(0)); // Date -> Service
+  document.getElementById('prevBtn-3')?.addEventListener('click', () => goToStep(1)); // Time -> Date
+  document.getElementById('prevBtn-4')?.addEventListener('click', () => goToStep(2)); // FName -> Time
+  document.getElementById('prevBtn-5')?.addEventListener('click', () => goToStep(3)); // LName -> FName
+  document.getElementById('prevBtn-6')?.addEventListener('click', () => goToStep(4)); // Phone -> LName
+
+  // Next button listeners for steps that don't auto-advance
+  // Step 1 (Service) auto-advances on 'change' via processServiceSelection
+  // Step 2 (Date) auto-advances on 'changeDate'
+  // Step 3 (Time) auto-advances on 'change'
+  document.getElementById('nextBtn-4')?.addEventListener('click', () => { // FName -> LName
+    if(validateSingleStepInputs(steps[3])) goToStep(4);
   });
-
-  document.getElementById('prevBtn-2')?.addEventListener('click', () => goToStep(0)); // Date to Service
-  // Date selection auto-advances to time via datepicker's changeDate
-
-  document.getElementById('prevBtn-3')?.addEventListener('click', () => goToStep(1)); // Time to Date
-  // Time selection auto-advances to first name via timeSelect's change listener
-
-  document.getElementById('prevBtn-4')?.addEventListener('click', () => goToStep(2)); // First Name to Time
-  document.getElementById('nextBtn-4')?.addEventListener('click', () => {
-    if(validateSingleStepInputs(steps[3])) goToStep(4); // To Last Name
+  document.getElementById('nextBtn-5')?.addEventListener('click', () => { // LName -> Phone
+    if(validateSingleStepInputs(steps[4])) goToStep(5);
   });
-
-  document.getElementById('prevBtn-5')?.addEventListener('click', () => goToStep(3)); // Last Name to First Name
-  document.getElementById('nextBtn-5')?.addEventListener('click', () => {
-    if(validateSingleStepInputs(steps[4])) goToStep(5); // To Phone
-  });
-
-  document.getElementById('prevBtn-6')?.addEventListener('click', () => goToStep(4)); // Phone to Last Name
-  // Submit button on step 6 is handled by form submit event
+  // Submit button on step 6 is handled by the form's submit event.
 
   function validateSingleStepInputs(stepElement) {
     let stepIsValid = true;
-    const inputsToValidate = stepElement.querySelectorAll('input[required], select[required]');
+    // Only validate inputs that are currently visible within the active step
+    if (!stepElement || !stepElement.classList.contains('active')) {
+        // If the step is not active, we might not want to validate it,
+        // or this function was called erroneously.
+        // For now, assume it's called only for the active step's "Next" button.
+        // return true; // Or handle as an error/warning
+    }
+
+    const inputsToValidate = stepElement.querySelectorAll('input[required]:not([type="hidden"]), select[required]:not([type="hidden"])');
     inputsToValidate.forEach(input => {
         let currentInputValid = true;
         const labelElement = document.querySelector(`label[for="${input.id}"]`);
         const labelText = labelElement ? labelElement.textContent : (input.placeholder || 'שדה זה');
-        const errorMessageBase = `אנא מלאו ${labelText.replace(':', '')}.`;
+        // Remove colon from label text for error message
+        const cleanedLabelText = labelText.endsWith(':') ? labelText.slice(0, -1) : labelText;
+        const errorMessageBase = `אנא מלאו ${cleanedLabelText}.`;
 
-        if (input.tagName === 'SELECT' && !input.value) { // Check for empty value in select
+
+        if (input.tagName === 'SELECT' && !input.value) {
             showValidationError(input, errorMessageBase);
             currentInputValid = false;
         } else if (input.tagName !== 'SELECT' && !input.value.trim()) {
@@ -520,5 +544,5 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   loadServices();
-  goToStep(0);
+  goToStep(0); // Initialize to the first step (Service selection)
 });

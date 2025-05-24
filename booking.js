@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const option = document.createElement('option');
         option.value = service.key;
         option.textContent = service.hebrewName;
-        option.dataset.bookableOnline = service.bookableOnline; // boolean
-        option.dataset.isManualTimeSelection = service.isManualTimeSelection; // boolean
+        option.dataset.bookableOnline = service.bookableOnline;
+        option.dataset.isManualTimeSelection = service.isManualTimeSelection;
         if (service.manualBookingMessage) {
             option.dataset.manualBookingMessage = service.manualBookingMessage;
         }
@@ -50,10 +50,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }).on('changeDate', function(e) {
     if (e.date) {
         const formattedDate = formatDate(e.date);
-        console.log('[datepicker changeDate] Date selected. Formatted:', formattedDate, 'Input value:', dateInput.value);
-        // Ensure input value is also updated if datepicker doesn't do it reliably for manual changes
         if(dateInput.value !== formattedDate) dateInput.value = formattedDate;
-
+        console.log('[datepicker changeDate] Date selected. Formatted:', formattedDate, 'Input value:', dateInput.value);
         loadAvailableTimes(dateInput.value);
         goToStep(2); // To Time selection (0-indexed)
     } else {
@@ -66,46 +64,45 @@ document.addEventListener('DOMContentLoaded', function() {
     removeValidationError(haircutTypeSelect);
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
 
-    timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
+    timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>'; // Clear time slots on service change
     console.log('[haircutTypeSelect change] Selected service key:', this.value);
 
     if (selectedOption && selectedOption.value) {
-      const isBookableOnline = selectedOption.dataset.bookableOnline === 'true'; // This is for actual booking
-      const isManualTimeSelection = selectedOption.dataset.isManualTimeSelection === 'true'; // For showing time slots for WA
+      const isBookableOnline = selectedOption.dataset.bookableOnline === 'true';
+      const isManualTimeSelection = selectedOption.dataset.isManualTimeSelection === 'true';
 
-      if (!isBookableOnline && isManualTimeSelection) { // Gvanim, Keratin, Ampule
+      if (!isBookableOnline && isManualTimeSelection) {
         submitBtn.textContent = 'שלחו הודעה בוואטסאפ';
         submitBtn.classList.remove('btn-primary');
         submitBtn.classList.add('btn-success');
-      } else if (isBookableOnline) { // Normal online booking
+      } else if (isBookableOnline) {
         submitBtn.textContent = 'קבעו תור';
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
-      } else { // Should not happen if all services are one of the above
+      } else {
         submitBtn.textContent = 'בחרו שירות';
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
       }
 
+      // If a date is already selected, load times. This is useful if user goes back,
+      // changes service, and date was already picked.
       if (dateInput.value && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value)) {
           console.log('[haircutTypeSelect change] Date already selected, loading times for new service.');
           loadAvailableTimes(dateInput.value);
-          goToStep(2); // To time selection (0-indexed)
-      } else {
-          goToStep(1); // To date selection (0-indexed)
-          $('#date').datepicker('show');
+          // Don't auto-advance here; let the "Next" button for Step 1 handle it,
+          // or if they pick a date next, that will advance.
       }
     } else {
         submitBtn.textContent = 'קבעו תור';
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
-        goToStep(0); // Back to first step
     }
   });
 
   timeSelect.addEventListener('change', function() {
     removeValidationError(timeSelect);
-    if (timeSelect.value) {
+    if (timeSelect.value && timeSelect.value !== "") { // Ensure a valid time is selected
       goToStep(3); // To First Name (0-indexed)
     }
   });
@@ -125,8 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // No need to check bookableOnline here, backend handles it by returning slots for manualTimeSelection too
-    if (!serviceKey) { // Should be caught by selectedOption check above, but good failsafe
+    if (!serviceKey) {
         timeSelect.innerHTML = '<option value="">בחרו סוג שירות קודם</option>';
         return;
     }
@@ -156,20 +152,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      if (data.error && !(data.isManualTimeSelection && data.availableSlots)) { // Allow proceeding if manual with slots
+      if (data.error && !(data.isManualTimeSelection && data.availableSlots)) {
         console.warn('[loadAvailableTimes] Application error from server:', data.error);
         showValidationError(timeSelect, data.error);
         timeSelect.innerHTML = `<option value="">${data.error}</option>`;
         return;
       }
 
-      // For manual time selection, use the manualBookingMessage if no slots, or guide user
       const isManualService = data.isManualTimeSelection === true || String(data.isManualTimeSelection) === "true";
-
       const slots = data.availableSlots || [];
+
       if (slots.length === 0) {
         if (isManualService && data.manualBookingMessage) {
-            timeSelect.innerHTML = `<option value="">${data.manualBookingMessage.includes("שעה משוערת") ? "אין זמנים משוערים. עדיין ניתן לשלוח הודעה." : data.manualBookingMessage}</option>`;
+            timeSelect.innerHTML = `<option value="">${data.manualBookingMessage.includes("שעה משוערת") ? "אין זמנים משוערים פנויים. עדיין ניתן לשלוח הודעה." : data.manualBookingMessage}</option>`;
         } else {
             timeSelect.innerHTML = '<option value="">אין שעות פנויות בתאריך זה</option>';
         }
@@ -202,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const serviceKey = haircutTypeSelect.value;
     const selectedOptionElement = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
-    // These booleans are now definitive from the dataset
     const isBookableOnline = selectedOptionElement.dataset.bookableOnline === 'true';
     const isManualTimeSelection = selectedOptionElement.dataset.isManualTimeSelection === 'true';
     const hebrewServiceName = selectedOptionElement.textContent;
@@ -216,12 +210,11 @@ document.addEventListener('DOMContentLoaded', function() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> שולח...';
 
-    if (isManualTimeSelection) { // This covers Gvanim, Keratin, Ampule
+    if (isManualTimeSelection) {
       const baseWhatsappUrl = 'https://api.whatsapp.com/send';
       const barbershopPhoneNumber = '972547224551';
       let textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור ל${hebrewServiceName}.`;
       if (date) textMessage += ` בתאריך ${date}`;
-      // Only include time if a valid time was actually selected from the (potentially short) list
       if (time && timeSelect.options.length > 1 && timeSelect.value !== "" && time !== timeSelect.options[0].value) {
           textMessage += ` בסביבות השעה ${time}`;
       } else if (date) {
@@ -234,21 +227,15 @@ document.addEventListener('DOMContentLoaded', function() {
       bookingForm.reset();
       $('#date').datepicker('update', '');
       timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
+      haircutTypeSelect.value = ""; // Reset service select
       goToStep(0);
-      // loadServices(); // Already done, form reset handles selects
       submitBtn.disabled = false;
-      // Reset button text based on initial state or first option
-      const firstServiceOption = haircutTypeSelect.options[0];
-      if (firstServiceOption && firstServiceOption.value === "") { // if placeholder exists
-        haircutTypeSelect.value = ""; // select placeholder
-        submitBtn.textContent = 'קבעו תור'; // default text
-        submitBtn.classList.remove('btn-success');
-        submitBtn.classList.add('btn-primary');
-      }
+      submitBtn.textContent = 'קבעו תור';
+      submitBtn.classList.remove('btn-success');
+      submitBtn.classList.add('btn-primary');
       return;
     }
 
-    // This part is for truly bookableOnline services
     if (isBookableOnline) {
         try {
           const finalCheckRequestBody = { date, serviceKey };
@@ -263,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (!finalCheckRes.ok || !finalCheckData.availableSlots || !finalCheckData.availableSlots.includes(time)) {
             alert("אופס! נראה שהשעה שבחרת כבר נתפסה או שאינה זמינה עוד. אנא בחרו שעה אחרת.");
             loadAvailableTimes(date);
-            goToStep(2); // Back to Time (0-indexed)
+            goToStep(2);
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'קבעו תור';
             return;
@@ -299,7 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = 'קבעו תור';
         }
     } else {
-        // Should not reach here if logic for isManualTimeSelection and isBookableOnline is correct
         console.error("Error: Service is neither bookable online nor manual time selection.");
         showValidationError(submitBtn, "שגיאה בהגדרת השירות. אנא צרו קשר עם המספרה.");
         submitBtn.disabled = false;
@@ -326,7 +312,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const isBookableOnline = selectedOption ? selectedOption.dataset.bookableOnline === 'true' : false;
     const isManualTimeSelection = selectedOption ? selectedOption.dataset.isManualTimeSelection === 'true' : false;
 
-    if (isBookableOnline || isManualTimeSelection) { // Date required for both showing slots
+    // Date is required if we need to show time slots (for online or manual-with-time-suggestion)
+    if (isBookableOnline || isManualTimeSelection) {
       if (!dateInput.value) {
         showValidationError(dateInput, 'אנא בחרו תאריך.');
         isValid = false;
@@ -334,7 +321,8 @@ document.addEventListener('DOMContentLoaded', function() {
         removeValidationError(dateInput);
       }
     }
-    // Time is only strictly required for online booking, for manual it's optional for the WA message
+    // Time is strictly required for online booking.
+    // For manual time selection, it's optional for the form if user doesn't pick one from list.
     if (isBookableOnline) {
       if (!timeSelect.value) {
         showValidationError(timeSelect, 'אנא בחרו שעה.');
@@ -343,7 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
         removeValidationError(timeSelect);
       }
     }
-
 
     const firstNameInput = document.getElementById('firstName');
     if (!firstNameInput.value.trim()) {
@@ -395,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         formError.textContent = message;
-        formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (formError.scrollIntoView) formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
     inputElement.classList.add('is-invalid');
@@ -404,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!feedback) {
       feedback = document.createElement('div');
       feedback.className = 'invalid-feedback';
-      if (inputElement.parentNode.classList.contains('input-group')) { // For datepicker
+      if (inputElement.parentNode.classList.contains('input-group')) {
         inputElement.parentNode.parentNode.appendChild(feedback);
       } else {
         inputElement.parentElement.appendChild(feedback);
@@ -419,7 +406,6 @@ document.addEventListener('DOMContentLoaded', function() {
       inputElement.classList.remove('is-invalid');
       inputElement.classList.remove('error-field');
       const parent = inputElement.parentElement;
-      // For datepicker, feedback might be outside the immediate parent
       const feedbackElement = parent.classList.contains('input-group') ?
                               parent.parentElement.querySelector('.invalid-feedback') :
                               parent.querySelector('.invalid-feedback');
@@ -451,29 +437,46 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     updateProgressBar(stepZeroIndexed);
     const activeStepElement = steps[stepZeroIndexed];
-    if (activeStepElement) {
+    if (activeStepElement && activeStepElement.scrollIntoView) {
         setTimeout(() => {
-            // Check if the active step is for date and trigger datepicker show if it's not already visible
-            if (stepZeroIndexed === 1 && !$('#date').data('datepicker').picker.is(":visible")) { // 1 is index for date step
-                 // $('#date').datepicker('show'); // This might be too aggressive
-            } else {
-                 activeStepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            activeStepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     }
   }
 
-  document.getElementById('prevBtn-2')?.addEventListener('click', () => goToStep(0));
-  document.getElementById('prevBtn-3')?.addEventListener('click', () => goToStep(1));
-  document.getElementById('prevBtn-4')?.addEventListener('click', () => goToStep(2));
+  // --- New Event Listeners for Next/Prev Buttons ---
+  document.getElementById('nextBtn-1')?.addEventListener('click', () => { // From Service to Date
+    if (validateSingleStepInputs(steps[0])) { // Validate step 1 (service)
+        goToStep(1); // Go to step 2 (date) (0-indexed: 1)
+        const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
+        // If a date is already selected and service is valid, load times for it
+        if (selectedOption && selectedOption.value && dateInput.value && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value)) {
+            loadAvailableTimes(dateInput.value);
+            goToStep(2); // If date also valid, effectively jump to time selection
+        } else if (selectedOption && selectedOption.value) {
+            $('#date').datepicker('show'); // Show datepicker if no date yet
+        }
+    }
+  });
+
+  document.getElementById('prevBtn-2')?.addEventListener('click', () => goToStep(0)); // Date to Service
+  // Date selection auto-advances to time via datepicker's changeDate
+
+  document.getElementById('prevBtn-3')?.addEventListener('click', () => goToStep(1)); // Time to Date
+  // Time selection auto-advances to first name via timeSelect's change listener
+
+  document.getElementById('prevBtn-4')?.addEventListener('click', () => goToStep(2)); // First Name to Time
   document.getElementById('nextBtn-4')?.addEventListener('click', () => {
-    if(validateSingleStepInputs(steps[3])) goToStep(4);
+    if(validateSingleStepInputs(steps[3])) goToStep(4); // To Last Name
   });
-  document.getElementById('prevBtn-5')?.addEventListener('click', () => goToStep(3));
+
+  document.getElementById('prevBtn-5')?.addEventListener('click', () => goToStep(3)); // Last Name to First Name
   document.getElementById('nextBtn-5')?.addEventListener('click', () => {
-    if(validateSingleStepInputs(steps[4])) goToStep(5);
+    if(validateSingleStepInputs(steps[4])) goToStep(5); // To Phone
   });
-  document.getElementById('prevBtn-6')?.addEventListener('click', () => goToStep(4));
+
+  document.getElementById('prevBtn-6')?.addEventListener('click', () => goToStep(4)); // Phone to Last Name
+  // Submit button on step 6 is handled by form submit event
 
   function validateSingleStepInputs(stepElement) {
     let stepIsValid = true;
@@ -481,13 +484,17 @@ document.addEventListener('DOMContentLoaded', function() {
     inputsToValidate.forEach(input => {
         let currentInputValid = true;
         const labelElement = document.querySelector(`label[for="${input.id}"]`);
-        const labelText = labelElement ? labelElement.textContent : 'שדה זה';
+        const labelText = labelElement ? labelElement.textContent : (input.placeholder || 'שדה זה');
         const errorMessageBase = `אנא מלאו ${labelText.replace(':', '')}.`;
 
-        if (!input.value.trim()) {
+        if (input.tagName === 'SELECT' && !input.value) { // Check for empty value in select
             showValidationError(input, errorMessageBase);
             currentInputValid = false;
-        } else {
+        } else if (input.tagName !== 'SELECT' && !input.value.trim()) {
+            showValidationError(input, errorMessageBase);
+            currentInputValid = false;
+        }
+        else { // Value exists, perform pattern checks if applicable
             if (input.id === 'firstName' || input.id === 'lastName') {
                 if (!namePattern.test(input.value.trim())) {
                     showValidationError(input, 'השם יכול להכיל אותיות (עברית/אנגלית), רווחים ומקפים.');

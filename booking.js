@@ -150,10 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (dayOfWeek === 5 && (serviceKey === 'gvanim' || serviceKey === 'keratin')) {
           timeSelect.innerHTML = `<option value="">${selectedOption.dataset.manualBookingMessage || 'שירות זה אינו זמין בימי שישי.'}</option>`;
-          // Add "(לא זמין בימי שישי)" to the default message if not already there
-          if (selectedOption.dataset.manualBookingMessage && !selectedOption.dataset.manualBookingMessage.includes("לא זמין בימי שישי")) {
-              timeSelect.options[0].textContent += " (לא זמין בימי שישי)";
-          }
+          
           return;
       }
       

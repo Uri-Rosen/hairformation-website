@@ -17,23 +17,31 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       allServicesData = await response.json();
 
-      haircutTypeSelect.innerHTML = '<option value="">בחרו סוג גליות</option>';
+      // Store current value if any, to reselect after repopulating
+      const currentServiceValue = haircutTypeSelect.value; 
+      
+      haircutTypeSelect.innerHTML = '<option value="">בחרו סוג שירות</option>';
       allServicesData.forEach(service => {
         const option = document.createElement('option');
         option.value = service.key;
         option.textContent = service.hebrewName;
-        option.dataset.bookableOnline = service.bookableOnline; // boolean
-        option.dataset.isManualTimeSelection = service.isManualTimeSelection; // boolean
+        option.dataset.bookableOnline = service.bookableOnline; 
+        option.dataset.isManualTimeSelection = service.isManualTimeSelection;
         if (service.manualBookingMessage) {
             option.dataset.manualBookingMessage = service.manualBookingMessage;
         }
         haircutTypeSelect.appendChild(option);
       });
+
+      // Reselect if possible
+      if (currentServiceValue) {
+        haircutTypeSelect.value = currentServiceValue;
+      }
       console.log('[loadServices] Services loaded and populated into select.');
     } catch (error) {
       console.error("[loadServices] Failed to load services:", error);
-      showValidationError(haircutTypeSelect, 'שגיאה בטעינת סוגי הגליותים. נסו לרענן את הדף.');
-      haircutTypeSelect.innerHTML = '<option value="">שגיאה בטעינת גליותים</option>';
+      showValidationError(haircutTypeSelect, 'שגיאה בטעינת סוגי השירותים. נסו לרענן את הדף.');
+      haircutTypeSelect.innerHTML = '<option value="">שגיאה בטעינת שירותים</option>';
     }
   }
 
@@ -41,8 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
     format: 'yyyy-mm-dd',
     language: 'he',
     orientation: 'bottom left',
-    weekStart: 0,
-    daysOfWeekDisabled: [1, 6],
+    weekStart: 0, // Sunday
+    daysOfWeekDisabled: [1, 6], // Monday, Saturday
     autoclose: true,
     startDate: new Date(),
     todayHighlight: true,
@@ -50,14 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }).on('changeDate', function(e) {
     if (e.date) {
         const formattedDate = formatDate(e.date);
-        console.log('[datepicker changeDate] Date selected. Formatted:', formattedDate, 'Input value:', dateInput.value);
-        // Ensure input value is also updated if datepicker doesn't do it reliably for manual changes
-        if(dateInput.value !== formattedDate) dateInput.value = formattedDate;
-
+        if(dateInput.value !== formattedDate) dateInput.value = formattedDate; // Ensure input value is updated
+        
+        removeValidationError(dateInput); // Remove validation error if date is selected
         loadAvailableTimes(dateInput.value);
-        goToStep(2); // To Time selection (0-indexed)
+        goToStep(2); 
     } else {
-        console.warn('[datepicker changeDate] e.date is undefined or null.');
         timeSelect.innerHTML = '<option value="">נא לבחור תאריך</option>';
     }
   });
@@ -66,47 +72,45 @@ document.addEventListener('DOMContentLoaded', function() {
     removeValidationError(haircutTypeSelect);
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
 
-    timeSelect.innerHTML = '<option value="">בחרו תאריך וגליות</option>';
-    console.log('[haircutTypeSelect change] Selected service key:', this.value);
-
+    timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
+    
     if (selectedOption && selectedOption.value) {
-      const isBookableOnline = selectedOption.dataset.bookableOnline === 'true'; // This is for actual booking
-      const isManualTimeSelection = selectedOption.dataset.isManualTimeSelection === 'true'; // For showing time slots for WA
+      const isBookableOnline = selectedOption.dataset.bookableOnline === 'true';
+      const isManualTimeSelection = selectedOption.dataset.isManualTimeSelection === 'true';
 
-      if (!isBookableOnline && isManualTimeSelection) { // Gvanim, Keratin, Ampule
+      if (!isBookableOnline && isManualTimeSelection) { 
         submitBtn.textContent = 'שלחו הודעה בוואטסאפ';
         submitBtn.classList.remove('btn-primary');
         submitBtn.classList.add('btn-success');
-      } else if (isBookableOnline) { // Normal online booking
+      } else if (isBookableOnline) { 
         submitBtn.textContent = 'קבעו תור';
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
-      } else { // Should not happen if all services are one of the above
-        submitBtn.textContent = 'בחרו גליות';
+      } else { 
+        submitBtn.textContent = 'בחרו שירות'; // Should ideally not be reached if services are configured
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
       }
 
       if (dateInput.value && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value)) {
-          console.log('[haircutTypeSelect change] Date already selected, loading times for new service.');
           loadAvailableTimes(dateInput.value);
-          goToStep(2); // To time selection (0-indexed)
+          goToStep(2); 
       } else {
-          goToStep(1); // To date selection (0-indexed)
-          $('#date').datepicker('show');
+          goToStep(1); 
+          // $('#date').datepicker('show'); // Consider if this is desired UX
       }
     } else {
-        submitBtn.textContent = 'קבעו תור';
+        submitBtn.textContent = 'קבעו תור'; // Default
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
-        goToStep(0); // Back to first step
+        goToStep(0); 
     }
   });
 
   timeSelect.addEventListener('change', function() {
     removeValidationError(timeSelect);
     if (timeSelect.value) {
-      goToStep(3); // To First Name (0-indexed)
+      goToStep(3); 
     }
   });
 
@@ -114,25 +118,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const serviceKey = haircutTypeSelect.value;
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
 
-    console.log('[loadAvailableTimes] Called. Date:', dateStr, 'ServiceKey:', serviceKey);
-    if (selectedOption) {
-        console.log('[loadAvailableTimes] Selected Option Text:', selectedOption.textContent,
-                    'BookableOnline:', selectedOption.dataset.bookableOnline,
-                    'IsManualTimeSelection:', selectedOption.dataset.isManualTimeSelection);
-    } else {
-        console.log('[loadAvailableTimes] No option selected in haircutTypeSelect.');
-        timeSelect.innerHTML = '<option value="">בחרו סוג גליות קודם</option>';
-        return;
-    }
-
-    // No need to check bookableOnline here, backend handles it by returning slots for manualTimeSelection too
-    if (!serviceKey) { // Should be caught by selectedOption check above, but good failsafe
-        timeSelect.innerHTML = '<option value="">בחרו סוג גליות קודם</option>';
+    if (!selectedOption || !serviceKey) {
+        timeSelect.innerHTML = '<option value="">בחרו סוג שירות קודם</option>';
         return;
     }
 
     if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        console.error('[loadAvailableTimes] Invalid or missing dateStr for API call:', dateStr);
         timeSelect.innerHTML = '<option value="">נא לבחור תאריך תקין</option>';
         return;
     }
@@ -140,7 +131,6 @@ document.addEventListener('DOMContentLoaded', function() {
     timeSelect.innerHTML = '<option value="">טוען זמנים...</option>';
     try {
       const requestBody = { date: dateStr, serviceKey: serviceKey };
-      console.log('[loadAvailableTimes] Fetching availability with body:', JSON.stringify(requestBody));
       const response = await fetch(`${SERVER_BASE_URL}/get-availability`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -150,26 +140,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (!response.ok) {
         const errorMsg = data.error || `שגיאת שרת: ${response.status}. נסו שוב.`;
-        console.error('[loadAvailableTimes] Server error response:', data);
         showValidationError(timeSelect, errorMsg);
         timeSelect.innerHTML = `<option value="">${errorMsg}</option>`;
         return;
       }
 
-      if (data.error && !(data.isManualTimeSelection && data.availableSlots)) { // Allow proceeding if manual with slots
-        console.warn('[loadAvailableTimes] Application error from server:', data.error);
+      if (data.error && !(data.isManualTimeSelection && data.availableSlots)) {
         showValidationError(timeSelect, data.error);
         timeSelect.innerHTML = `<option value="">${data.error}</option>`;
         return;
       }
-
-      // For manual time selection, use the manualBookingMessage if no slots, or guide user
+      
       const isManualService = data.isManualTimeSelection === true || String(data.isManualTimeSelection) === "true";
-
       const slots = data.availableSlots || [];
+
       if (slots.length === 0) {
         if (isManualService && data.manualBookingMessage) {
-            timeSelect.innerHTML = `<option value="">${data.manualBookingMessage.includes("שעה משוערת") ? "אין זמנים משוערים. עדיין ניתן לשלוח הודעה." : data.manualBookingMessage}</option>`;
+            timeSelect.innerHTML = `<option value="">${data.manualBookingMessage.includes("שעה משוערת") ? "אין זמנים משוערים פנויים. עדיין ניתן לשלוח הודעה כללית." : data.manualBookingMessage}</option>`;
         } else {
             timeSelect.innerHTML = '<option value="">אין שעות פנויות בתאריך זה</option>';
         }
@@ -182,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
           timeSelect.appendChild(option);
         });
       }
-      removeValidationError(timeSelect);
+      removeValidationError(timeSelect); // Clear any previous error state on successful load
     } catch (err) {
       console.error("[loadAvailableTimes] Fetch/Network error:", err);
       showValidationError(timeSelect, 'שגיאה בטעינת הזמנים. בדקו את חיבור האינטרנט ונסו שוב.');
@@ -202,7 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const serviceKey = haircutTypeSelect.value;
     const selectedOptionElement = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
-    // These booleans are now definitive from the dataset
     const isBookableOnline = selectedOptionElement.dataset.bookableOnline === 'true';
     const isManualTimeSelection = selectedOptionElement.dataset.isManualTimeSelection === 'true';
     const hebrewServiceName = selectedOptionElement.textContent;
@@ -216,43 +202,40 @@ document.addEventListener('DOMContentLoaded', function() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> שולח...';
 
-    if (isManualTimeSelection) { // This covers Gvanim, Keratin, Ampule
+    if (isManualTimeSelection) {
       const baseWhatsappUrl = 'https://api.whatsapp.com/send';
-      const barbershopPhoneNumber = '972547224551';
+      const barbershopPhoneNumber = '972547224551'; // Make sure this is correct
       let textMessage = `היי, שמי ${firstName} ${lastName} ואשמח לקבוע תור ל${hebrewServiceName}.`;
       if (date) textMessage += ` בתאריך ${date}`;
-      // Only include time if a valid time was actually selected from the (potentially short) list
-      if (time && timeSelect.options.length > 1 && timeSelect.value !== "" && time !== timeSelect.options[0].value) {
+      
+      // Only include time if it's a valid selection and not the placeholder
+      if (time && timeSelect.options.length > 0 && timeSelect.value !== "" && time !== timeSelect.options[0].value ) {
           textMessage += ` בסביבות השעה ${time}`;
-      } else if (date) {
+      } else if (date) { // If date is selected but no specific time from list, indicate time will be coordinated
           textMessage += ` (שעה תיקבע טלפונית)`;
       }
       textMessage += `. מספר הטלפון שלי הוא ${phone}.`;
 
       window.open(`${baseWhatsappUrl}?phone=${barbershopPhoneNumber}&text=${encodeURIComponent(textMessage)}`, '_blank');
       alert("הודעת הוואטסאפ מוכנה לשליחה! אנא שלחו את ההודעה כדי להשלים את הבקשה.");
+      
       bookingForm.reset();
       $('#date').datepicker('update', '');
-      timeSelect.innerHTML = '<option value="">בחרו תאריך וגליות</option>';
+      timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
+      haircutTypeSelect.value = ""; // Reset service select to placeholder
       goToStep(0);
-      // loadServices(); // Already done, form reset handles selects
+      
       submitBtn.disabled = false;
-      // Reset button text based on initial state or first option
-      const firstServiceOption = haircutTypeSelect.options[0];
-      if (firstServiceOption && firstServiceOption.value === "") { // if placeholder exists
-        haircutTypeSelect.value = ""; // select placeholder
-        submitBtn.textContent = 'קבעו תור'; // default text
-        submitBtn.classList.remove('btn-success');
-        submitBtn.classList.add('btn-primary');
-      }
+      submitBtn.textContent = 'קבעו תור'; // Reset to default
+      submitBtn.classList.remove('btn-success');
+      submitBtn.classList.add('btn-primary');
       return;
     }
 
-    // This part is for truly bookableOnline services
     if (isBookableOnline) {
         try {
+          // Final availability check
           const finalCheckRequestBody = { date, serviceKey };
-          console.log('[bookingForm submit] Final availability check with body:', JSON.stringify(finalCheckRequestBody));
           const finalCheckRes = await fetch(`${SERVER_BASE_URL}/get-availability`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -262,15 +245,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
           if (!finalCheckRes.ok || !finalCheckData.availableSlots || !finalCheckData.availableSlots.includes(time)) {
             alert("אופס! נראה שהשעה שבחרת כבר נתפסה או שאינה זמינה עוד. אנא בחרו שעה אחרת.");
-            loadAvailableTimes(date);
-            goToStep(2); // Back to Time (0-indexed)
+            loadAvailableTimes(date); // Refresh times
+            goToStep(2); // Back to Time selection
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'קבעו תור';
             return;
           }
 
+          // Proceed to book
           const bookRequestBody = { serviceKey, date, time, clientName: `${firstName} ${lastName}`, clientPhone: phone };
-          console.log('[bookingForm submit] Booking appointment with body:', JSON.stringify(bookRequestBody));
           const response = await fetch(`${SERVER_BASE_URL}/book-appointment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -289,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
               serviceName: hebrewServiceName
             };
             localStorage.setItem('appointmentDetails', JSON.stringify(appointmentDetails));
-            window.location.href = '/confirmation/';
+            window.location.href = '/confirmation/'; // Ensure this path is correct
           }
         } catch (err) {
           console.error("[bookingForm submit] Booking error:", err);
@@ -299,9 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = 'קבעו תור';
         }
     } else {
-        // Should not reach here if logic for isManualTimeSelection and isBookableOnline is correct
         console.error("Error: Service is neither bookable online nor manual time selection.");
-        showValidationError(submitBtn, "שגיאה בהגדרת הגליות. אנא צרו קשר עם המספרה.");
+        showValidationError(submitBtn, "שגיאה בהגדרת השירות. אנא צרו קשר עם המספרה.");
         submitBtn.disabled = false;
         submitBtn.innerHTML = 'קבעו תור';
     }
@@ -316,32 +298,34 @@ document.addEventListener('DOMContentLoaded', function() {
     if (existingFormError) existingFormError.remove();
 
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
-    if (!haircutTypeSelect.value || !selectedOption) {
-      showValidationError(haircutTypeSelect, 'אנא בחרו סוג גליות.');
+    if (!haircutTypeSelect.value || !selectedOption || selectedOption.value === "") {
+      showValidationError(haircutTypeSelect, 'אנא בחרו סוג שירות.');
       isValid = false;
     } else {
       removeValidationError(haircutTypeSelect);
     }
 
     const isBookableOnline = selectedOption ? selectedOption.dataset.bookableOnline === 'true' : false;
-    const isManualTimeSelection = selectedOption ? selectedOption.dataset.isManualTimeSelection === 'true' : false;
-
-    if (isBookableOnline || isManualTimeSelection) { // Date required for both showing slots
-      if (!dateInput.value) {
-        showValidationError(dateInput, 'אנא בחרו תאריך.');
-        isValid = false;
-      } else {
-        removeValidationError(dateInput);
-      }
+    // Date is required if a service is selected and it's either bookable or manual (to show slots)
+    if (selectedOption && selectedOption.value !== "") {
+        if (!dateInput.value) {
+            showValidationError(dateInput, 'אנא בחרו תאריך.');
+            isValid = false;
+        } else {
+            removeValidationError(dateInput);
+        }
     }
-    // Time is only strictly required for online booking, for manual it's optional for the WA message
+    
+    // Time is strictly required only for online booking. For manual, it's optional.
     if (isBookableOnline) {
-      if (!timeSelect.value) {
+      if (!timeSelect.value || timeSelect.value === "") { // Check against empty string too
         showValidationError(timeSelect, 'אנא בחרו שעה.');
         isValid = false;
       } else {
         removeValidationError(timeSelect);
       }
+    } else { // For manual selection, if time select has only a placeholder, it's not an error not to select
+        removeValidationError(timeSelect);
     }
 
 
@@ -381,53 +365,68 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showValidationError(inputElement, message) {
-    if (!inputElement || inputElement.type === 'submit') {
+    // General form error (e.g. for submit button or non-input specific errors)
+    if (!inputElement || inputElement.type === 'submit' || inputElement.id === 'submitBtn') {
         let formError = bookingForm.querySelector('.form-error-general');
         if (!formError) {
             formError = document.createElement('div');
             formError.className = 'form-error-general alert alert-danger mt-3';
             formError.setAttribute('role', 'alert');
-            const progressBar = document.querySelector('.progress');
-            if (progressBar) {
-                progressBar.parentNode.insertBefore(formError, progressBar.nextSibling);
+            // Insert after progress bar or at the top of the form
+            const progressBarElement = document.querySelector('.progress');
+            if (progressBarElement && progressBarElement.parentNode) {
+                progressBarElement.parentNode.insertBefore(formError, progressBarElement.nextSibling);
             } else {
-                bookingForm.prepend(formError);
+                bookingForm.prepend(formError); // Fallback
             }
         }
         formError.textContent = message;
         formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
+
+    // Input-specific error
     inputElement.classList.add('is-invalid');
-    inputElement.classList.add('error-field');
+    inputElement.classList.add('error-field'); // Custom class for easier selection if needed
+    
     let feedback = inputElement.parentElement.querySelector('.invalid-feedback');
-    if (!feedback) {
-      feedback = document.createElement('div');
-      feedback.className = 'invalid-feedback';
-      if (inputElement.parentNode.classList.contains('input-group')) { // For datepicker
-        inputElement.parentNode.parentNode.appendChild(feedback);
-      } else {
-        inputElement.parentElement.appendChild(feedback);
-      }
+    // For datepicker or elements wrapped in input-group
+    if (inputElement.parentNode.classList.contains('input-group')) {
+        feedback = inputElement.parentNode.parentNode.querySelector('.invalid-feedback');
+         if (!feedback) { // If it's still not found, create it within the outer parent
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            inputElement.parentNode.parentNode.appendChild(feedback);
+        }
+    } else {
+        if (!feedback) {
+          feedback = document.createElement('div');
+          feedback.className = 'invalid-feedback';
+          inputElement.parentElement.appendChild(feedback);
+        }
     }
     feedback.textContent = message;
-    feedback.style.display = 'block';
+    feedback.style.display = 'block'; // Ensure it's visible
   }
 
   function removeValidationError(inputElement) {
     if (inputElement) {
       inputElement.classList.remove('is-invalid');
       inputElement.classList.remove('error-field');
-      const parent = inputElement.parentElement;
-      // For datepicker, feedback might be outside the immediate parent
-      const feedbackElement = parent.classList.contains('input-group') ?
-                              parent.parentElement.querySelector('.invalid-feedback') :
-                              parent.querySelector('.invalid-feedback');
+      
+      let feedbackElement;
+      if (inputElement.parentNode.classList.contains('input-group')) {
+          feedbackElement = inputElement.parentNode.parentNode.querySelector('.invalid-feedback');
+      } else {
+          feedbackElement = inputElement.parentElement.querySelector('.invalid-feedback');
+      }
+      
       if (feedbackElement) {
         feedbackElement.textContent = '';
         feedbackElement.style.display = 'none';
       }
     }
+    // Also remove general form error if one exists
     const existingFormError = bookingForm.querySelector('.form-error-general');
     if (existingFormError) existingFormError.remove();
   }
@@ -445,52 +444,58 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function goToStep(stepZeroIndexed) {
-    console.log('[goToStep] Going to step (0-indexed):', stepZeroIndexed);
     steps.forEach((step, index) => {
       step.classList.toggle('active', index === stepZeroIndexed);
     });
     updateProgressBar(stepZeroIndexed);
     const activeStepElement = steps[stepZeroIndexed];
     if (activeStepElement) {
-        setTimeout(() => {
-            // Check if the active step is for date and trigger datepicker show if it's not already visible
-            if (stepZeroIndexed === 1 && !$('#date').data('datepicker').picker.is(":visible")) { // 1 is index for date step
-                 // $('#date').datepicker('show'); // This might be too aggressive
-            } else {
+        // Scroll to the active step, but not aggressively for step 0 or 1
+        if (stepZeroIndexed > 0) { // Avoid scrolling for the very first step
+            setTimeout(() => {
                  activeStepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 100);
+            }, 100);
+        }
     }
   }
 
-  document.getElementById('prevBtn-2')?.addEventListener('click', () => goToStep(0));
-  document.getElementById('prevBtn-3')?.addEventListener('click', () => goToStep(1));
-  document.getElementById('prevBtn-4')?.addEventListener('click', () => goToStep(2));
+  // Attach event listeners for prev/next buttons in steps
+  document.getElementById('prevBtn-2')?.addEventListener('click', () => goToStep(0)); // Step 2 (Date) -> Step 1 (Service)
+  document.getElementById('prevBtn-3')?.addEventListener('click', () => goToStep(1)); // Step 3 (Time) -> Step 2 (Date)
+  document.getElementById('prevBtn-4')?.addEventListener('click', () => goToStep(2)); // Step 4 (First Name) -> Step 3 (Time)
+  
   document.getElementById('nextBtn-4')?.addEventListener('click', () => {
-    if(validateSingleStepInputs(steps[3])) goToStep(4);
+    if(validateSingleStepInputs(steps[3])) goToStep(4); // Step 4 (First Name) -> Step 5 (Last Name)
   });
-  document.getElementById('prevBtn-5')?.addEventListener('click', () => goToStep(3));
+  
+  document.getElementById('prevBtn-5')?.addEventListener('click', () => goToStep(3)); // Step 5 (Last Name) -> Step 4 (First Name)
   document.getElementById('nextBtn-5')?.addEventListener('click', () => {
-    if(validateSingleStepInputs(steps[4])) goToStep(5);
+    if(validateSingleStepInputs(steps[4])) goToStep(5); // Step 5 (Last Name) -> Step 6 (Phone)
   });
-  document.getElementById('prevBtn-6')?.addEventListener('click', () => goToStep(4));
+  
+  document.getElementById('prevBtn-6')?.addEventListener('click', () => goToStep(4)); // Step 6 (Phone) -> Step 5 (Last Name)
 
+  // Validation for individual step fields (used by next buttons in multi-field steps)
   function validateSingleStepInputs(stepElement) {
     let stepIsValid = true;
+    // Validate only 'input' and 'select' elements that are 'required' within this step
     const inputsToValidate = stepElement.querySelectorAll('input[required], select[required]');
+    
     inputsToValidate.forEach(input => {
         let currentInputValid = true;
-        const labelElement = document.querySelector(`label[for="${input.id}"]`);
-        const labelText = labelElement ? labelElement.textContent : 'שדה זה';
-        const errorMessageBase = `אנא מלאו ${labelText.replace(':', '')}.`;
+        // Try to get label text for more descriptive error messages
+        const labelElement = stepElement.querySelector(`label[for="${input.id}"]`);
+        const fieldName = labelElement ? labelElement.textContent.replace(':', '').trim() : 'שדה זה';
+        const errorMessageBase = `אנא מלאו ${fieldName}.`;
 
         if (!input.value.trim()) {
             showValidationError(input, errorMessageBase);
             currentInputValid = false;
         } else {
+            // Specific pattern validations if any
             if (input.id === 'firstName' || input.id === 'lastName') {
                 if (!namePattern.test(input.value.trim())) {
-                    showValidationError(input, 'השם יכול להכיל אותיות (עברית/אנגלית), רווחים ומקפים.');
+                    showValidationError(input, `השדה ${fieldName} יכול להכיל אותיות (עברית/אנגלית), רווחים ומקפים.`);
                     currentInputValid = false;
                 } else { removeValidationError(input); }
             } else if (input.id === 'phone') {
@@ -498,12 +503,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     showValidationError(input, 'מספר טלפון לא תקין (לדוגמה: 0501234567).');
                     currentInputValid = false;
                 } else { removeValidationError(input); }
-            } else { removeValidationError(input); }
+            } else { 
+                removeValidationError(input); // Default: remove error if not empty
+            }
         }
         if (!currentInputValid) stepIsValid = false;
     });
     return stepIsValid;
   }
+
 
   function formatDate(dateObj) {
     const year = dateObj.getFullYear();
@@ -512,6 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return `${year}-${month}-${day}`;
   }
 
+  // Initial setup
   loadServices();
-  goToStep(0);
+  goToStep(0); // Start at the first step
 });

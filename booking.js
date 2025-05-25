@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       allServicesData = await response.json();
 
-      haircutTypeSelect.innerHTML = '<option value="">בחרו סוג שירות</option>';
+      haircutTypeSelect.innerHTML = '<option value="">בחרו סוג גליות</option>';
       allServicesData.forEach(service => {
         const option = document.createElement('option');
         option.value = service.key;
@@ -32,8 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('[loadServices] Services loaded and populated into select.');
     } catch (error) {
       console.error("[loadServices] Failed to load services:", error);
-      showValidationError(haircutTypeSelect, 'שגיאה בטעינת סוגי השירותים. נסו לרענן את הדף.');
-      haircutTypeSelect.innerHTML = '<option value="">שגיאה בטעינת שירותים</option>';
+      showValidationError(haircutTypeSelect, 'שגיאה בטעינת סוגי הגליותים. נסו לרענן את הדף.');
+      haircutTypeSelect.innerHTML = '<option value="">שגיאה בטעינת גליותים</option>';
     }
   }
 
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     removeValidationError(haircutTypeSelect);
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
 
-    timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
+    timeSelect.innerHTML = '<option value="">בחרו תאריך וגליות</option>';
     console.log('[haircutTypeSelect change] Selected service key:', this.value);
 
     if (selectedOption && selectedOption.value) {
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
       } else { // Should not happen if all services are one of the above
-        submitBtn.textContent = 'בחרו שירות';
+        submitBtn.textContent = 'בחרו גליות';
         submitBtn.classList.remove('btn-success');
         submitBtn.classList.add('btn-primary');
       }
@@ -121,13 +121,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     'IsManualTimeSelection:', selectedOption.dataset.isManualTimeSelection);
     } else {
         console.log('[loadAvailableTimes] No option selected in haircutTypeSelect.');
-        timeSelect.innerHTML = '<option value="">בחרו סוג שירות קודם</option>';
+        timeSelect.innerHTML = '<option value="">בחרו סוג גליות קודם</option>';
         return;
     }
 
     // No need to check bookableOnline here, backend handles it by returning slots for manualTimeSelection too
     if (!serviceKey) { // Should be caught by selectedOption check above, but good failsafe
-        timeSelect.innerHTML = '<option value="">בחרו סוג שירות קודם</option>';
+        timeSelect.innerHTML = '<option value="">בחרו סוג גליות קודם</option>';
         return;
     }
 
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
       alert("הודעת הוואטסאפ מוכנה לשליחה! אנא שלחו את ההודעה כדי להשלים את הבקשה.");
       bookingForm.reset();
       $('#date').datepicker('update', '');
-      timeSelect.innerHTML = '<option value="">בחרו תאריך ושירות</option>';
+      timeSelect.innerHTML = '<option value="">בחרו תאריך וגליות</option>';
       goToStep(0);
       // loadServices(); // Already done, form reset handles selects
       submitBtn.disabled = false;
@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         // Should not reach here if logic for isManualTimeSelection and isBookableOnline is correct
         console.error("Error: Service is neither bookable online nor manual time selection.");
-        showValidationError(submitBtn, "שגיאה בהגדרת השירות. אנא צרו קשר עם המספרה.");
+        showValidationError(submitBtn, "שגיאה בהגדרת הגליות. אנא צרו קשר עם המספרה.");
         submitBtn.disabled = false;
         submitBtn.innerHTML = 'קבעו תור';
     }
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const selectedOption = haircutTypeSelect.options[haircutTypeSelect.selectedIndex];
     if (!haircutTypeSelect.value || !selectedOption) {
-      showValidationError(haircutTypeSelect, 'אנא בחרו סוג שירות.');
+      showValidationError(haircutTypeSelect, 'אנא בחרו סוג גליות.');
       isValid = false;
     } else {
       removeValidationError(haircutTypeSelect);

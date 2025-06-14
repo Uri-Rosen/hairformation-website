@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-  const SERVER_BASE_URL = 'https://hairformation-backend.onrender.com';
+  const SERVER_BASE_URL = 'https://hairformation-backend-eqk9.onrender.com';
 
   const haircutTypeSelect = document.getElementById('haircutType');
   const dateInput = document.getElementById('date');
